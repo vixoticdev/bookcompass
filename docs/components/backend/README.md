@@ -13,6 +13,7 @@
 - Config module is global.
 - CORS is enabled for local web development.
 - Validation pipe is enabled globally.
+- Mongoose is wired through `MONGODB_URI`, with local MongoDB fallback.
 - Health endpoint exists at `/health`.
 
 ## Planned Modules
