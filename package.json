@@ -1,0 +1,27 @@
+{
+  "name": "bookcompass",
+  "version": "0.1.0",
+  "private": true,
+  "description": "BookCompass is an intelligent reading decision engine for outcome-based, behavior-aware book selection.",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:web": "npm run dev --workspace @bookcompass/web",
+    "dev:api": "npm run start:dev --workspace @bookcompass/api",
+    "build": "npm run build --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "check": "npm run lint --workspaces --if-present && npm run build --workspaces --if-present",
+    "infra:up": "docker compose up -d",
+    "infra:down": "docker compose down"
+  },
+  "engines": {
+    "node": ">=22.0.0",
+    "npm": ">=10.0.0"
+  },
+  "devDependencies": {
+    "@nestjs/platform-express": "^11.1.19"
+  }
+}
