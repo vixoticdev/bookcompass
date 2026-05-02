@@ -43,6 +43,14 @@ Example:
 
 > Recommended because you selected discipline, completed Deep Work, prefer practical nonfiction, have 30 minutes per day, and tend to abandon slow-paced books after 30%.
 
+## Research and Data References
+
+Potential references for future recommendation engine research, dataset exploration, and model evaluation:
+
+- Reading habits and mood impact dataset: http://kaggle.com/datasets/hanaksoy/reading-habits-and-mood-impact-dataset
+- MDPI Data paper, volume 6, issue 8, article 83: https://www.mdpi.com/2306-5729/6/8/83
+- Goodreads book datasets, 10M: https://www.kaggle.com/datasets/bahramjannesarr/goodreads-book-datasets-10m
+
 ## Phase 2 AI/ML Extension
 
 Future Python service responsibilities:
