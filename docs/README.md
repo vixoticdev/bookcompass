@@ -2,6 +2,10 @@
 
 This folder is the operating memory for BookCompass. Keep it current as the product moves through each release.
 
+Start here for every new chat/session:
+
+- `PROJECT_CONTEXT.md`: canonical project context, timeline, daily log, and mandatory update rules.
+
 ## Documentation Map
 
 - `architecture/`: decisions that shape the system.

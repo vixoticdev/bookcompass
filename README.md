@@ -32,6 +32,10 @@ Default URLs:
 
 ## Project Cadence
 
+Every new chat/session should start by reading:
+
+- `docs/PROJECT_CONTEXT.md`
+
 Every meaningful release should update:
 
 - `docs/releases/`

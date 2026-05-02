@@ -1,0 +1,394 @@
+# BookCompass Project Context and Timeline
+
+This is the canonical handoff file for BookCompass.
+
+Every Codex/chat instance working on this project must read this file before making changes. The user may point new chat instances to this file so they can quickly understand the product, current status, timeline, and update rules.
+
+## Mandatory Update Rule
+
+This file must be updated every time any chat instance modifies the project.
+
+Required update behavior:
+
+1. Add a dated entry under `Daily Execution Log`.
+2. Update `Current Project State` if the status changed.
+3. Update `Immediate Next Steps` if priorities changed.
+4. Update affected component docs under `docs/components/`.
+5. Update or add a release note under `docs/releases/` for meaningful work.
+6. Do not remove prior day notes unless they are factually wrong; append corrections instead.
+7. Never commit secrets, connection strings, passwords, tokens, or `.env.local`.
+
+If a future instance changes code but does not update this file, treat that as incomplete work.
+
+## Product Definition
+
+Product name: **BookCompass**
+
+Repository/folder name: `bookcompass`
+
+GitHub repo: `https://github.com/vixoticdev/bookcompass`
+
+BookCompass is an intelligent reading decision engine. It is not a generic book recommendation app.
+
+The product should answer:
+
+> What should I read next based on my actual reading behavior, abandonment patterns, available time, emotional state, learning goals, and reading preferences?
+
+Core differentiator:
+
+- Outcome-based recommendations, not only genre/popularity.
+- Anti-DNF logic that reduces recommendations users are likely to abandon.
+- Mood, energy, focus, and time-aware decision sessions.
+- Explainable scoring that tells users why a book was recommended.
+- Admin controls for book metadata, tuning, analytics, and drop-off analysis.
+
+Product positioning:
+
+- Treat as a startup-worthy SaaS product.
+- Avoid college-project shortcuts.
+- Prefer deterministic, inspectable recommendation logic for MVP.
+- Add AI/ML later when data and scoring contracts exist.
+
+## Technical Strategy
+
+Repository strategy: monorepo.
+
+Current structure:
+
+```text
+bookcompass/
+  apps/
+    web/
+    api/
+  packages/
+    shared/
+  docs/
+    architecture/
+    components/
+    releases/
+    roadmap/
+    runbooks/
+```
+
+Stack:
+
+- Frontend: Vite, React, TypeScript, Tailwind, React Query, React Router.
+- Backend: NestJS, TypeScript, Mongoose.
+- Database: MongoDB Atlas for cloud dev, local Docker MongoDB fallback.
+- Cache/queue: Redis available locally through Docker; deeper usage later.
+- Shared package: `@bookcompass/shared` for common domain constants and types.
+
+Current architecture decision:
+
+- Recommendation engine starts inside `apps/api` as deterministic NestJS services/modules.
+- Do not create a separate recommendation repo now.
+- Future Python/FastAPI AI service is Phase 2/3 only, after enough behavioral data exists.
+
+## Local Development
+
+Primary folder:
+
+```bash
+cd /Users/vix/Documents/bookcompass
+```
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Start local infrastructure:
+
+```bash
+npm run infra:up
+```
+
+Start backend:
+
+```bash
+npm run dev:api
+```
+
+Start frontend in a second terminal:
+
+```bash
+npm run dev:web
+```
+
+Local URLs:
+
+- Web: `http://localhost:5173`
+- API: `http://localhost:3000`
+- API health: `http://localhost:3000/health`
+
+Validation:
+
+```bash
+npm run check
+npm run test --workspace @bookcompass/api -- --runInBand
+npm run test:e2e --workspace @bookcompass/api
+```
+
+Known local issue:
+
+- If API fails with `EADDRINUSE` on port `3000`, find and kill the older process:
+
+```bash
+lsof -nP -iTCP:3000 -sTCP:LISTEN
+kill <PID>
+```
+
+Atlas note:
+
+- `.env.local` contains the local `MONGODB_URI`.
+- `.env.local` is ignored by Git and must stay uncommitted.
+- If Atlas rejects connection, update Atlas Network Access with the current public IP.
+
+## Current Project State
+
+As of 2026-05-02:
+
+- Monorepo exists and is pushed to GitHub.
+- Frontend and backend can run locally.
+- Docker Desktop works locally.
+- Local Docker MongoDB and Redis are available.
+- MongoDB Atlas project/cluster exists and connectivity was verified.
+- Atlas database name in URI should be `bookcompass`.
+- Backend has global config, CORS, validation pipe, health endpoint, and Mongoose connection.
+- No product domain modules are implemented yet.
+- Auth is not implemented yet.
+- Recommendation engine is documented but not implemented yet.
+- Admin dashboard is documented but not implemented yet.
+- CI/CD is not configured yet.
+
+Important uncommitted context:
+
+- `docs/components/recommendation-engine/README.md` had research/data reference additions before this file was created. Do not overwrite those changes accidentally.
+
+## Daily Execution Log
+
+### Day 1: 2026-05-01
+
+Goal: finish setup.
+
+Completed:
+
+- Created BookCompass monorepo.
+- Set local folder back to `/Users/vix/Documents/bookcompass`.
+- Initialized Git on `main`.
+- Created and pushed GitHub repo `vixoticdev/bookcompass`.
+- Added root npm workspace.
+- Created `apps/web` Vite React TypeScript app.
+- Created `apps/api` NestJS app.
+- Created `packages/shared`.
+- Added Docker Compose for local MongoDB and Redis.
+- Added `.env.example`.
+- Added initial documentation system under `docs/`.
+- Wired API baseline:
+  - global config
+  - CORS
+  - global validation pipe
+  - `/`
+  - `/health`
+- Wired Mongoose to use `MONGODB_URI`.
+- Verified Atlas connectivity.
+- Rotated exposed Atlas password and verified new local `.env.local`.
+- Confirmed frontend and backend both run locally.
+
+Commits:
+
+- `204efb7 chore: initialize BookCompass monorepo`
+- `119e9b3 chore: wire api database configuration`
+
+Validation:
+
+- `npm run check`
+- API unit tests
+- API e2e tests
+- Atlas ping against `bookcompass`
+
+### Day 2: 2026-05-02
+
+Goal: establish continuity for multi-chat development and prepare for backend domain foundation.
+
+Completed so far:
+
+- Created this canonical project context/timeline file.
+- Added mandatory rule that every future modifying instance must update this file.
+
+Recommended Day 2 implementation target:
+
+- Create backend domain modules and schemas:
+  - users
+  - reading profiles
+  - authors
+  - books
+  - reading events
+  - DNF records
+  - recommendation sessions
+- Keep controllers minimal if needed; prioritize correct schema/service foundation.
+- Add DTOs and validation for write paths.
+- Add indexes where obvious.
+- Add seed strategy planning, even if seed implementation waits until Day 3.
+
+## Month-One Timeline
+
+### Phase 1: Foundation
+
+Target: Days 1-5
+
+Objectives:
+
+- Repository and documentation foundation.
+- Local dev environment.
+- Auth decision.
+- Mongo schemas and backend modules.
+- Basic frontend app shell.
+- Seed data strategy.
+
+Status:
+
+- Day 1 setup complete.
+- Day 2 should start backend domain modeling.
+
+### Phase 2: Reading Identity
+
+Target: Days 6-10
+
+Objectives:
+
+- Signup/login.
+- Reading onboarding.
+- Preferences:
+  - genres
+  - authors
+  - languages
+  - fiction vs nonfiction
+  - book length
+  - pacing tolerance
+  - writing style
+  - available reading time
+  - reading speed estimate
+- User library signals:
+  - liked
+  - disliked
+  - completed
+  - abandoned
+
+Output:
+
+- User can create a reading identity that recommendation logic can consume.
+
+### Phase 3: Book Catalog and Behavior Events
+
+Target: Days 11-15
+
+Objectives:
+
+- Book CRUD.
+- Author CRUD.
+- Outcome tagging.
+- Style, pacing, difficulty, emotional tone metadata.
+- Reading events:
+  - started
+  - liked
+  - disliked
+  - completed
+  - abandoned
+  - saved/bookmarked
+- DNF records:
+  - stopped percentage
+  - reason
+  - style/pacing/difficulty snapshot
+
+Output:
+
+- System has enough structured data to make deterministic recommendations.
+
+### Phase 4: Decision Engine MVP
+
+Target: Days 16-22
+
+Objectives:
+
+- Candidate generation.
+- Weighted scoring.
+- Outcome-fit score.
+- Personal-fit score.
+- Mood/energy/time-fit score.
+- Anti-DNF risk penalty.
+- Explanation generator.
+- Recommendation session persistence.
+- Feedback capture.
+
+Output:
+
+- User can ask "what should I read next?" and receive ranked, explainable recommendations.
+
+### Phase 5: Admin Dashboard and Analytics
+
+Target: Days 23-27
+
+Objectives:
+
+- Admin book management.
+- Admin author management.
+- Recommendation tuning weights.
+- Drop-off analytics.
+- Popular recommendation paths.
+- Recommendation conversion metrics.
+
+Output:
+
+- Product owner can tune and inspect the decision engine.
+
+### Phase 6: Deployment and Demo Readiness
+
+Target: Days 28-30
+
+Objectives:
+
+- Production env setup.
+- Deployment docs.
+- Seed/demo data.
+- Recruiter-facing README.
+- Demo script.
+- Interview talking points.
+- CI/CD if time allows.
+
+Output:
+
+- Credible full-stack SaaS demo with explainable architecture and operational story.
+
+## Immediate Next Steps
+
+1. Preserve the existing modified recommendation-engine docs unless intentionally committing them.
+2. Create backend modules/schemas for the core domain.
+3. Decide auth implementation:
+   - likely JWT local auth for MVP, or Firebase Auth if deployment speed becomes more important.
+4. Add seed data plan for books/authors/outcomes.
+5. Add API contracts for profile, books, events, DNF, and recommendation sessions.
+6. Keep frontend simple until backend contracts are stable.
+
+## Engineering Rules for Future Instances
+
+- Read this file first.
+- Check `git status --short --branch` before editing.
+- Do not overwrite user changes or unrelated dirty files.
+- Use `rg`/`rg --files` for search.
+- Use `apply_patch` for manual edits.
+- Keep secrets out of Git.
+- Update docs as part of the same change.
+- Run focused validation after changes.
+- Commit and push when the user asks, or when the work clearly needs to be shared across chat instances.
+- Keep the product SaaS-grade: schemas, validation, explanations, and admin operations matter.
+
+## Key Product Concepts to Preserve
+
+- Reading identity: stable user preference and behavior profile.
+- Decision session: one recommendation request with current outcome, mood, energy, focus, and time.
+- Anti-DNF engine: reduce books likely to be abandoned.
+- Explainability: every recommendation must include concrete reasons based on scoring signals.
+- Admin tuning: recommendation weights and metadata must be operationally adjustable.
+- Future AI/ML: planned, but not a substitute for MVP scoring clarity.
