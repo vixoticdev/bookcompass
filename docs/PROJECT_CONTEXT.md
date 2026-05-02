@@ -78,6 +78,22 @@ Stack:
 - Cache/queue: Redis available locally through Docker; deeper usage later.
 - Shared package: `@bookcompass/shared` for common domain constants and types.
 
+## Frontend Visual Direction
+
+The user wants BookCompass to have an antique retro look with a parchment-like feeling while keeping modern product functionality.
+
+Design direction:
+
+- Base palette: coffee, cream, sepia, beige, off-white, white.
+- Use parchment and paper texture subtly.
+- Use editorial/literary typography without sacrificing readability.
+- Keep the interface modern, responsive, accessible, and SaaS-grade.
+- Use dark ink/espresso text for contrast.
+- Use muted forest green, aged brass, soft terracotta, or restrained charcoal as accents so the UI does not become a one-note beige surface.
+- Admin views should stay dense, calm, and operational rather than decorative.
+
+The app should feel like an intelligent reading desk: warm, literary, focused, and premium.
+
 Current architecture decision:
 
 - Recommendation engine starts inside `apps/api` as deterministic NestJS services/modules.
@@ -158,6 +174,7 @@ As of 2026-05-02:
 - Backend has global config, CORS, validation pipe, health endpoint, and Mongoose connection.
 - Backend domain modules are implemented for users, reading profiles, authors, books, reading events, DNF records, and recommendation sessions.
 - Shared package contains core domain constants used by backend DTO validation.
+- Frontend visual direction is antique retro/parchment-inspired with modern SaaS usability.
 - Auth is not implemented yet.
 - Recommendation engine is documented; session storage exists, but scoring/candidate generation is not implemented yet.
 - Admin dashboard is documented but not implemented yet.
@@ -236,6 +253,7 @@ Completed:
   - user recommendation session history
 - Updated backend component documentation.
 - Added Day 2 domain foundation release note.
+- Captured frontend visual direction: antique retro, parchment-like, coffee/cream/sepia/beige/off-white palette with modern usability.
 
 Validation:
 
@@ -389,7 +407,8 @@ Output:
    - likely JWT local auth for MVP, or Firebase Auth if deployment speed becomes more important.
 4. Add seed data plan for books/authors/outcomes.
 5. Add API contracts for profile, books, events, DNF, and recommendation sessions.
-6. Keep frontend simple until backend contracts are stable.
+6. Build the initial frontend shell using the documented antique retro/parchment visual direction.
+7. Keep frontend flows simple until backend contracts are stable.
 
 ## Engineering Rules for Future Instances
 
