@@ -4,6 +4,13 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { join } from 'node:path';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { AuthorsModule } from './authors/authors.module';
+import { BooksModule } from './books/books.module';
+import { DnfModule } from './dnf/dnf.module';
+import { ProfilesModule } from './profiles/profiles.module';
+import { ReadingEventsModule } from './reading-events/reading-events.module';
+import { RecommendationsModule } from './recommendations/recommendations.module';
+import { UsersModule } from './users/users.module';
 
 const databaseImports =
   process.env.NODE_ENV === 'test'
@@ -19,6 +26,19 @@ const databaseImports =
         }),
       ];
 
+const domainImports =
+  process.env.NODE_ENV === 'test'
+    ? []
+    : [
+        UsersModule,
+        ProfilesModule,
+        AuthorsModule,
+        BooksModule,
+        ReadingEventsModule,
+        DnfModule,
+        RecommendationsModule,
+      ];
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -31,6 +51,7 @@ const databaseImports =
       ],
     }),
     ...databaseImports,
+    ...domainImports,
   ],
   controllers: [AppController],
   providers: [AppService],

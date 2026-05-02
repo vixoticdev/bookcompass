@@ -4,6 +4,10 @@
 
 The MVP recommendation engine is deterministic and explainable. It will live inside the NestJS API until the product has enough data to justify a Python AI/ML service.
 
+## Current Backend Foundation
+
+Day 2 added `apps/api/src/recommendations` with `RecommendationSession` storage. This is not scoring yet; it records the user's decision context and reserves structure for future candidates, score breakdowns, scoring signals, and explanation lines.
+
 ## Inputs
 
 - reading profile
