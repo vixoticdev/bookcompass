@@ -25,6 +25,7 @@
     "@nestjs/core": "^11.0.1",
     "@nestjs/mongoose": "^11.0.3",
     "@nestjs/platform-express": "^11.0.1",
+    "@bookcompass/shared": "file:../../packages/shared",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.3",
     "mongoose": "^9.0.1",
@@ -66,6 +67,9 @@
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
+    },
+    "moduleNameMapper": {
+      "^@bookcompass/shared$": "<rootDir>/test-support/shared.ts"
     },
     "collectCoverageFrom": [
       "**/*.(t|j)s"

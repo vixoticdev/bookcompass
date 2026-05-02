@@ -156,9 +156,10 @@ As of 2026-05-02:
 - MongoDB Atlas project/cluster exists and connectivity was verified.
 - Atlas database name in URI should be `bookcompass`.
 - Backend has global config, CORS, validation pipe, health endpoint, and Mongoose connection.
-- No product domain modules are implemented yet.
+- Backend domain modules are implemented for users, reading profiles, authors, books, reading events, DNF records, and recommendation sessions.
+- Shared package contains core domain constants used by backend DTO validation.
 - Auth is not implemented yet.
-- Recommendation engine is documented but not implemented yet.
+- Recommendation engine is documented; session storage exists, but scoring/candidate generation is not implemented yet.
 - Admin dashboard is documented but not implemented yet.
 - CI/CD is not configured yet.
 
@@ -210,16 +211,14 @@ Validation:
 
 ### Day 2: 2026-05-02
 
-Goal: establish continuity for multi-chat development and prepare for backend domain foundation.
+Goal: establish continuity for multi-chat development and implement backend domain foundation.
 
-Completed so far:
+Completed:
 
 - Created this canonical project context/timeline file.
 - Added mandatory rule that every future modifying instance must update this file.
-
-Recommended Day 2 implementation target:
-
-- Create backend domain modules and schemas:
+- Added shared domain constants for recommendation outcomes, reading depth, reading events, reading statuses, DNF reasons, mood, energy, focus, book formats, pacing, and difficulty.
+- Created backend modules, schemas, DTOs, services, and minimal create/list controllers for:
   - users
   - reading profiles
   - authors
@@ -227,10 +226,30 @@ Recommended Day 2 implementation target:
   - reading events
   - DNF records
   - recommendation sessions
-- Keep controllers minimal if needed; prioritize correct schema/service foundation.
-- Add DTOs and validation for write paths.
-- Add indexes where obvious.
-- Add seed strategy planning, even if seed implementation waits until Day 3.
+- Added indexes for obvious lookup paths:
+  - unique users by email
+  - one reading profile per user
+  - unique authors by name
+  - unique books by title and author
+  - user reading event timelines
+  - unique DNF record per user/book
+  - user recommendation session history
+- Updated backend component documentation.
+- Added Day 2 domain foundation release note.
+
+Validation:
+
+- `npm run build --workspace @bookcompass/shared`
+- `npm run build --workspace @bookcompass/api`
+- `npm run test --workspace @bookcompass/api -- --runInBand`
+- `npm run test:e2e --workspace @bookcompass/api`
+
+Recommended Day 3 implementation target:
+
+- Decide MVP auth approach and wire user ownership assumptions into backend contracts.
+- Add seed data strategy and initial seed script for authors/books/outcome metadata.
+- Add basic frontend app shell routes for onboarding, library, recommendations, and admin placeholders.
+- Start filtering/list endpoints only where needed by the seed/admin flow.
 
 ## Month-One Timeline
 
@@ -250,7 +269,8 @@ Objectives:
 Status:
 
 - Day 1 setup complete.
-- Day 2 should start backend domain modeling.
+- Day 2 backend domain modeling complete.
+- Day 3 should move into auth decision, seed data, and initial frontend shell.
 
 ### Phase 2: Reading Identity
 
