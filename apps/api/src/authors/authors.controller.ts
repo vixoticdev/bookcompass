@@ -1,6 +1,7 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { AuthorsService } from './authors.service';
 import { CreateAuthorDto } from './dto/create-author.dto';
+import { ListAuthorsQueryDto } from './dto/list-authors-query.dto';
 
 @Controller('authors')
 export class AuthorsController {
@@ -12,7 +13,7 @@ export class AuthorsController {
   }
 
   @Get()
-  findAll() {
-    return this.authorsService.findAll();
+  findAll(@Query() query: ListAuthorsQueryDto) {
+    return this.authorsService.findAll(query);
   }
 }

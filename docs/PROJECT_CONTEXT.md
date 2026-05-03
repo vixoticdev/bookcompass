@@ -163,7 +163,7 @@ Atlas note:
 
 ## Current Project State
 
-As of 2026-05-02:
+As of 2026-05-03:
 
 - Monorepo exists and is pushed to GitHub.
 - Frontend and backend can run locally.
@@ -173,7 +173,11 @@ As of 2026-05-02:
 - Atlas database name in URI should be `bookcompass`.
 - Backend has global config, CORS, validation pipe, health endpoint, and Mongoose connection.
 - Backend domain modules are implemented for users, reading profiles, authors, books, reading events, DNF records, and recommendation sessions.
+- MVP auth ownership decision is documented: user-owned DTOs keep explicit `userId` until Phase 2 auth guards derive ownership from verified JWT claims.
 - Shared package contains core domain constants used by backend DTO validation.
+- Backend catalog list endpoints now support basic filters for seed/admin exploration.
+- API seed script exists for initial authors/books: `npm run seed --workspace @bookcompass/api`.
+- Frontend app shell routes exist for onboarding, library, recommendation start/history, and admin placeholders.
 - Frontend visual direction is antique retro/parchment-inspired with modern SaaS usability.
 - Auth is not implemented yet.
 - Recommendation engine is documented; session storage exists, but scoring/candidate generation is not implemented yet.
@@ -269,6 +273,51 @@ Recommended Day 3 implementation target:
 - Add basic frontend app shell routes for onboarding, library, recommendations, and admin placeholders.
 - Start filtering/list endpoints only where needed by the seed/admin flow.
 
+### Day 3: 2026-05-03
+
+Goal: implement auth ownership decision, seed data foundation, catalog filters, and frontend shell routes.
+
+Completed:
+
+- Added `docs/architecture/auth-ownership.md` documenting the MVP JWT ownership strategy and explicit `userId` transition plan.
+- Added author list filters for search, genre, and outcome.
+- Added book list filters for search, author, genre, outcome, pacing, difficulty, depth, format, and max estimated minutes.
+- Added idempotent API seed script using the Nest application context:
+  - James Clear / `Atomic Habits`
+  - Cal Newport / `Deep Work`
+  - Eric Ries / `The Lean Startup`
+  - Daniel Kahneman / `Thinking, Fast and Slow`
+  - Brene Brown / `Dare to Lead`
+- Replaced the Day 1 frontend splash screen with routed shell surfaces:
+  - `/onboarding`
+  - `/library`
+  - `/recommendations/new`
+  - `/recommendations/history`
+  - `/admin`
+  - `/admin/books`
+- Updated backend, frontend, admin dashboard docs, and added the Day 3 release note.
+
+Validation:
+
+- `npm run build --workspace @bookcompass/shared`
+- `npm run build --workspace @bookcompass/api`
+- `npm run build --workspace @bookcompass/web`
+- `npm run check`
+- `npm run test --workspace @bookcompass/api -- --runInBand`
+- `npm run test:e2e --workspace @bookcompass/api`
+- `MONGODB_URI=mongodb://localhost:27017/bookcompass npm run seed --workspace @bookcompass/api`
+
+Note:
+
+- Atlas rejected the current IP during seed validation, so the seed script was verified against local Docker MongoDB.
+
+Recommended Day 4 implementation target:
+
+- Add focused API tests for catalog filters and seed upsert behavior.
+- Start reader identity form wiring on the frontend against reading profile contracts.
+- Add API client helpers and React Query data hooks for catalog/admin routes.
+- Decide whether local Day 4 should prioritize auth scaffolding or onboarding UX depth before Phase 2 begins.
+
 ## Month-One Timeline
 
 ### Phase 1: Foundation
@@ -288,7 +337,7 @@ Status:
 
 - Day 1 setup complete.
 - Day 2 backend domain modeling complete.
-- Day 3 should move into auth decision, seed data, and initial frontend shell.
+- Day 3 app shell, auth ownership decision, seed script, and catalog filters complete.
 
 ### Phase 2: Reading Identity
 

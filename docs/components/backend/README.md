@@ -6,7 +6,7 @@
 - TypeScript
 - MongoDB through Mongoose
 - Redis planned for caching and queues
-- JWT or Firebase Auth integration
+- JWT-backed auth planned for Phase 2
 
 ## Current Baseline
 
@@ -16,12 +16,14 @@
 - Mongoose is wired through `MONGODB_URI`, with local MongoDB fallback.
 - Health endpoint exists at `/health`.
 - Domain modules now exist for users, reading profiles, authors, books, reading events, DNF records, and recommendation sessions.
+- Day 3 auth decision is documented in `docs/architecture/auth-ownership.md`: user-owned DTOs keep explicit `userId` until auth guards derive ownership from verified token claims.
+- Initial catalog seed script exists at `npm run seed --workspace @bookcompass/api`.
 
 ## Module Status
 
 ```text
 src/
-  auth/                 planned
+  auth/                 decided: JWT-backed ownership contract, implementation planned
   users/                implemented: schema, DTO, service, minimal REST
   profiles/             implemented: schema, DTO, service, minimal REST
   books/                implemented: schema, DTO, service, minimal REST
@@ -44,7 +46,12 @@ src/
 - `POST /dnf-records`, `GET /dnf-records`
 - `POST /recommendation-sessions`, `GET /recommendation-sessions`
 
-These endpoints are intentionally thin Day 2 write/read paths. They establish validated storage contracts before auth, ownership checks, filtering, pagination, admin policy, and full CRUD are added.
+These endpoints are intentionally thin foundation write/read paths. They establish validated storage contracts before auth, ownership checks, pagination, admin policy, and full CRUD are added.
+
+Catalog filters added on Day 3:
+
+- `GET /authors?q=&genre=&outcome=`
+- `GET /books?q=&authorId=&genre=&outcome=&pacing=&difficulty=&depth=&format=&maxEstimatedMinutes=`
 
 ## Schema Notes
 
@@ -62,6 +69,7 @@ These endpoints are intentionally thin Day 2 write/read paths. They establish va
 - Mongo references use `IsMongoId`.
 - Shared domain constants from `@bookcompass/shared` validate outcomes, reading depth, event type, DNF reason, mood, energy, focus, book format, pacing, and difficulty.
 - Numeric fields have explicit bounds for minutes, percentages, page counts, and reading speed.
+- List query DTOs validate catalog filter values before they reach service queries.
 
 ## Indexes
 
@@ -79,6 +87,16 @@ These endpoints are intentionally thin Day 2 write/read paths. They establish va
 - DTO validation on all write endpoints.
 - Service methods should keep business logic outside controllers.
 - Recommendation explanations should be generated from scoring signals, not free-form guesses.
+
+## Seed Data
+
+The initial seed script upserts a small nonfiction catalog for MVP recommendation exploration:
+
+- James Clear / `Atomic Habits`
+- Cal Newport / `Deep Work`
+- Eric Ries / `The Lean Startup`
+- Daniel Kahneman / `Thinking, Fast and Slow`
+- Brene Brown / `Dare to Lead`
 
 ## Documentation Rule
 

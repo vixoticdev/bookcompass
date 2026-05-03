@@ -69,6 +69,31 @@ The frontend owns:
 /admin/analytics
 ```
 
+## Implemented Day 3 Shell
+
+Routes now mounted in the Vite app:
+
+- `/onboarding`: placeholder reader identity capture surface.
+- `/library`: placeholder catalog/library table using seeded book examples.
+- `/recommendations/new`: placeholder decision-session entry flow.
+- `/recommendations/history`: empty state for saved recommendation sessions.
+- `/admin`: placeholder operational dashboard.
+- `/admin/books`: placeholder catalog admin notes tied to Day 3 API filters.
+
+State management:
+
+- React Router owns route switching.
+- React Query provider is already installed in `main.tsx`, but no route consumes API data yet.
+
+Loading/error/empty states:
+
+- Recommendation history includes an empty state.
+- API loading and error states should be added when route data fetching starts.
+
+UX tradeoff:
+
+- Day 3 uses realistic route surfaces and labels without implementing final forms, so navigation and product shape can stabilize before Phase 2 identity work.
+
 ## Documentation Rule
 
 When adding a frontend feature, update this doc with:
