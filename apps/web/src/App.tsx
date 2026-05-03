@@ -11,7 +11,9 @@ import {
   Sparkles,
   UserRound,
 } from 'lucide-react'
+import { type FormEvent, type ReactNode, useMemo, useState } from 'react'
 import { NavLink, Navigate, Route, Routes } from 'react-router-dom'
+import { useAuthors, useBooks, useCreateReadingIdentity } from './lib/queries'
 
 const routes = [
   { to: '/onboarding', label: 'Onboarding', icon: UserRound },
@@ -19,6 +21,7 @@ const routes = [
   { to: '/recommendations/new', label: 'Recommend', icon: Compass },
   { to: '/recommendations/history', label: 'History', icon: ListChecks },
   { to: '/admin', label: 'Admin', icon: Settings2 },
+  { to: '/admin/books', label: 'Catalog', icon: BookMarked },
 ]
 
 const readingSignals = [
@@ -28,16 +31,22 @@ const readingSignals = [
   'DNF patterns',
 ]
 
-const libraryRows = [
-  ['Atomic Habits', 'Habit-building', 'Fast', 'Seed candidate'],
-  ['Deep Work', 'Productivity', 'Deep', 'Seed candidate'],
-  ['Thinking, Fast and Slow', 'Decision science', 'Challenging', 'Seed candidate'],
-]
-
 const adminModules = [
   ['Catalog quality', 'Authors, books, tags, pacing, difficulty'],
   ['Recommendation tuning', 'Weights, DNF penalties, explanation templates'],
   ['Behavior analytics', 'Completion paths, abandonment clusters, feedback'],
+]
+
+const outcomeOptions = [
+  ['habit-building', 'Habit building'],
+  ['discipline', 'Discipline'],
+  ['productivity', 'Productivity'],
+  ['startup-thinking', 'Startup thinking'],
+  ['leadership', 'Leadership'],
+  ['better-manager', 'Better manager'],
+  ['emotional-resilience', 'Emotional resilience'],
+  ['persuasion', 'Persuasion'],
+  ['technical-learning', 'Technical learning'],
 ]
 
 function Shell() {
@@ -123,7 +132,123 @@ function PageHeader({
   )
 }
 
+function TextField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string
+  value: string
+  onChange: (value: string) => void
+}) {
+  return (
+    <label className="grid gap-2 text-sm font-semibold">
+      {label}
+      <input
+        className="h-11 rounded-md border border-[#cfc0aa] bg-white px-3 text-sm outline-none focus:border-[#315d48]"
+        onChange={(event) => onChange(event.target.value)}
+        value={value}
+      />
+    </label>
+  )
+}
+
+function SelectField({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string
+  value: string
+  options: string[][]
+  onChange: (value: string) => void
+}) {
+  return (
+    <label className="grid gap-2 text-sm font-semibold">
+      {label}
+      <select
+        className="h-11 rounded-md border border-[#cfc0aa] bg-white px-3 text-sm outline-none focus:border-[#315d48]"
+        onChange={(event) => onChange(event.target.value)}
+        value={value}
+      >
+        {options.map(([optionValue, labelText]) => (
+          <option key={optionValue} value={optionValue}>
+            {labelText}
+          </option>
+        ))}
+      </select>
+    </label>
+  )
+}
+
+function StatusMessage({
+  tone,
+  children,
+}: {
+  tone: 'error' | 'success'
+  children: ReactNode
+}) {
+  return (
+    <p
+      className={[
+        'mt-4 rounded-md border px-3 py-2 text-sm font-medium',
+        tone === 'success'
+          ? 'border-[#adc8b7] bg-[#edf5ef] text-[#244a37]'
+          : 'border-[#dfb8a6] bg-[#fff0e8] text-[#7b2f19]',
+      ].join(' ')}
+    >
+      {children}
+    </p>
+  )
+}
+
+function TableStatus({ children }: { children: ReactNode }) {
+  return (
+    <div className="border-b border-[#eee4d6] px-4 py-5 text-sm font-medium text-[#62584a] last:border-b-0">
+      {children}
+    </div>
+  )
+}
+
 function Onboarding() {
+  const createReadingIdentity = useCreateReadingIdentity()
+  const [displayName, setDisplayName] = useState('Demo Reader')
+  const [email, setEmail] = useState('reader@bookcompass.local')
+  const [targetOutcome, setTargetOutcome] = useState('productivity')
+  const [favoriteGenres, setFavoriteGenres] = useState(
+    'Productivity, Self-improvement',
+  )
+  const [preferredFormat, setPreferredFormat] = useState('ebook')
+  const [dailyReadingMinutes, setDailyReadingMinutes] = useState(30)
+  const [preferredDepth, setPreferredDepth] = useState('balanced')
+  const [pacingTolerance, setPacingTolerance] = useState('moderate')
+  const [difficultyTolerance, setDifficultyTolerance] = useState('moderate')
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+
+    createReadingIdentity.mutate({
+      user: {
+        displayName,
+        email,
+        role: 'reader',
+      },
+      profile: {
+        dailyReadingMinutes,
+        difficultyTolerance,
+        favoriteGenres: favoriteGenres
+          .split(',')
+          .map((genre) => genre.trim())
+          .filter(Boolean),
+        pacingTolerance,
+        preferredDepth,
+        preferredFormats: [preferredFormat],
+        targetOutcomes: [targetOutcome],
+      },
+    })
+  }
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -133,34 +258,111 @@ function Onboarding() {
       />
 
       <section className="grid gap-4 lg:grid-cols-[1fr_320px]">
-        <div className="rounded-md border border-[#d8cbb8] bg-[#fffaf0] p-5">
+        <form
+          className="rounded-md border border-[#d8cbb8] bg-[#fffaf0] p-5"
+          onSubmit={handleSubmit}
+        >
           <div className="grid gap-4 sm:grid-cols-2">
-            {[
-              'Target outcomes',
-              'Favorite genres',
-              'Avoided genres',
-              'Preferred formats',
-              'Daily reading minutes',
-              'Difficulty tolerance',
-            ].map((label) => (
-              <label className="grid gap-2 text-sm font-semibold" key={label}>
-                {label}
-                <input
-                  className="h-11 rounded-md border border-[#cfc0aa] bg-white px-3 text-sm outline-none focus:border-[#315d48]"
-                  placeholder="Planned input"
-                  readOnly
-                />
-              </label>
-            ))}
+            <TextField
+              label="Display name"
+              onChange={setDisplayName}
+              value={displayName}
+            />
+            <TextField label="Email" onChange={setEmail} value={email} />
+            <SelectField
+              label="Target outcome"
+              onChange={setTargetOutcome}
+              options={outcomeOptions}
+              value={targetOutcome}
+            />
+            <TextField
+              label="Favorite genres"
+              onChange={setFavoriteGenres}
+              value={favoriteGenres}
+            />
+            <SelectField
+              label="Preferred format"
+              onChange={setPreferredFormat}
+              options={[
+                ['ebook', 'Ebook'],
+                ['paperback', 'Paperback'],
+                ['hardcover', 'Hardcover'],
+                ['audiobook', 'Audiobook'],
+              ]}
+              value={preferredFormat}
+            />
+            <label className="grid gap-2 text-sm font-semibold">
+              Daily reading minutes
+              <input
+                className="h-11 rounded-md border border-[#cfc0aa] bg-white px-3 text-sm outline-none focus:border-[#315d48]"
+                max={1440}
+                min={1}
+                onChange={(event) =>
+                  setDailyReadingMinutes(Number(event.target.value))
+                }
+                type="number"
+                value={dailyReadingMinutes}
+              />
+            </label>
+            <SelectField
+              label="Reading depth"
+              onChange={setPreferredDepth}
+              options={[
+                ['quick', 'Quick'],
+                ['balanced', 'Balanced'],
+                ['deep', 'Deep'],
+              ]}
+              value={preferredDepth}
+            />
+            <SelectField
+              label="Pacing tolerance"
+              onChange={setPacingTolerance}
+              options={[
+                ['slow', 'Slow'],
+                ['moderate', 'Moderate'],
+                ['fast', 'Fast'],
+              ]}
+              value={pacingTolerance}
+            />
+            <SelectField
+              label="Difficulty tolerance"
+              onChange={setDifficultyTolerance}
+              options={[
+                ['easy', 'Easy'],
+                ['moderate', 'Moderate'],
+                ['challenging', 'Challenging'],
+              ]}
+              value={difficultyTolerance}
+            />
           </div>
-        </div>
+          <button
+            className="mt-5 inline-flex h-11 items-center gap-2 rounded-md bg-[#2f5d46] px-4 text-sm font-semibold text-[#fffaf0] disabled:cursor-not-allowed disabled:opacity-60"
+            disabled={createReadingIdentity.isPending}
+            type="submit"
+          >
+            <UserRound size={17} />
+            {createReadingIdentity.isPending ? 'Saving profile' : 'Save reader'}
+          </button>
+          {createReadingIdentity.isSuccess ? (
+            <StatusMessage tone="success">
+              Saved {createReadingIdentity.data.user.displayName} with a reading
+              profile tied to user ID {createReadingIdentity.data.user._id}.
+            </StatusMessage>
+          ) : null}
+          {createReadingIdentity.isError ? (
+            <StatusMessage tone="error">
+              Could not save the reader identity. Check the API response and try
+              a unique email.
+            </StatusMessage>
+          ) : null}
+        </form>
 
         <div className="rounded-md border border-[#d4c3aa] bg-[#efe3cf] p-5">
           <Gauge className="text-[#315d48]" size={22} />
-          <h2 className="mt-4 text-xl font-semibold">Day 3 contract</h2>
+          <h2 className="mt-4 text-xl font-semibold">Day 4 data flow</h2>
           <p className="mt-2 text-sm leading-6 text-[#5c4f40]">
-            User-owned resources keep `userId` in write DTOs until auth lands.
-            The next phase can replace manual IDs with verified identity claims.
+            This form creates a user first, then creates the reading profile with
+            that user ID. Auth can later replace this explicit ownership handoff.
           </p>
         </div>
       </section>
@@ -169,6 +371,14 @@ function Onboarding() {
 }
 
 function Library() {
+  const booksQuery = useBooks({ limit: 25 })
+  const authorsQuery = useAuthors({ limit: 100 })
+  const authorNameById = useMemo(() => {
+    return new Map(
+      authorsQuery.data?.items.map((author) => [author._id, author.name]) ?? [],
+    )
+  }, [authorsQuery.data?.items])
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -180,18 +390,23 @@ function Library() {
       <section className="overflow-hidden rounded-md border border-[#d8cbb8] bg-[#fffaf0]">
         <div className="grid grid-cols-[1.1fr_0.9fr_0.7fr_0.8fr] border-b border-[#e7dbc8] px-4 py-3 text-xs font-semibold uppercase text-[#74624d]">
           <span>Book</span>
-          <span>Outcome</span>
+          <span>Author</span>
           <span>Depth</span>
-          <span>Status</span>
+          <span>Minutes</span>
         </div>
-        {libraryRows.map((row) => (
+        {booksQuery.isLoading ? <TableStatus>Loading catalog</TableStatus> : null}
+        {booksQuery.isError ? (
+          <TableStatus>Could not load books from the API</TableStatus>
+        ) : null}
+        {booksQuery.data?.items.map((book) => (
           <div
             className="grid grid-cols-[1.1fr_0.9fr_0.7fr_0.8fr] border-b border-[#eee4d6] px-4 py-4 text-sm last:border-b-0"
-            key={row[0]}
+            key={book._id}
           >
-            {row.map((cell) => (
-              <span key={cell}>{cell}</span>
-            ))}
+            <span className="font-semibold">{book.title}</span>
+            <span>{authorNameById.get(book.authorId) ?? 'Unknown author'}</span>
+            <span>{book.depth}</span>
+            <span>{book.estimatedMinutes ?? 'Unset'}</span>
           </div>
         ))}
       </section>
@@ -273,22 +488,60 @@ function AdminHome() {
 }
 
 function AdminBooks() {
+  const [q, setQ] = useState('')
+  const [outcome, setOutcome] = useState('productivity')
+  const booksQuery = useBooks({ limit: 20, outcome, q })
+
   return (
     <div className="space-y-6">
       <PageHeader
-        description="Catalog administration will use the new author and book filters to review seeded records by genre, outcome, depth, pacing, and difficulty."
+        description="Catalog administration uses the new API filters to review seeded records by outcome, search text, depth, pacing, and difficulty."
         eyebrow="Admin catalog"
-        title="Seeded books are ready for review workflows"
+        title="Review the seeded catalog from Atlas"
       />
 
-      <div className="rounded-md border border-[#d8cbb8] bg-[#fffaf0] p-5">
-        <BookMarked className="text-[#315d48]" size={22} />
-        <h2 className="mt-4 text-xl font-semibold">Catalog filters</h2>
-        <p className="mt-2 text-sm leading-6 text-[#62584a]">
-          API support now covers title search, author, genre, outcome, format,
-          pacing, difficulty, depth, and maximum estimated reading time.
+      <section className="rounded-md border border-[#d8cbb8] bg-[#fffaf0] p-5">
+        <div className="grid gap-4 md:grid-cols-[1fr_260px]">
+          <TextField label="Search title" onChange={setQ} value={q} />
+          <SelectField
+            label="Outcome"
+            onChange={setOutcome}
+            options={outcomeOptions}
+            value={outcome}
+          />
+        </div>
+        <div className="mt-5 overflow-hidden rounded-md border border-[#e2d5c2]">
+          <div className="grid grid-cols-[1.1fr_0.8fr_0.8fr_0.8fr] border-b border-[#e7dbc8] bg-[#f6eddd] px-4 py-3 text-xs font-semibold uppercase text-[#74624d]">
+            <span>Book</span>
+            <span>Pacing</span>
+            <span>Difficulty</span>
+            <span>Formats</span>
+          </div>
+          {booksQuery.isLoading ? <TableStatus>Loading books</TableStatus> : null}
+          {booksQuery.isError ? (
+            <TableStatus>Could not load catalog data</TableStatus>
+          ) : null}
+          {booksQuery.data?.items.map((book) => (
+            <div
+              className="grid grid-cols-[1.1fr_0.8fr_0.8fr_0.8fr] border-b border-[#eee4d6] px-4 py-4 text-sm last:border-b-0"
+              key={book._id}
+            >
+              <span className="font-semibold">{book.title}</span>
+              <span>{book.pacing}</span>
+              <span>{book.difficulty}</span>
+              <span>{book.formats.join(', ')}</span>
+            </div>
+          ))}
+          {booksQuery.data?.items.length === 0 ? (
+            <TableStatus>No matching books</TableStatus>
+          ) : null}
+        </div>
+        <p className="mt-3 flex items-center gap-2 text-sm text-[#62584a]">
+          <BookMarked className="text-[#315d48]" size={17} />
+          Showing {booksQuery.data?.items.length ?? 0} of{' '}
+          {booksQuery.data?.total ?? 0} catalog records.
         </p>
-      </div>
+      </section>
     </div>
   )
 }

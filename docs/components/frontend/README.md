@@ -83,16 +83,28 @@ Routes now mounted in the Vite app:
 State management:
 
 - React Router owns route switching.
-- React Query provider is already installed in `main.tsx`, but no route consumes API data yet.
+- React Query provider is installed in `main.tsx`.
+- `src/lib/api.ts` owns typed HTTP calls to the backend.
+- `src/lib/queries.ts` owns catalog and reader identity hooks.
 
 Loading/error/empty states:
 
 - Recommendation history includes an empty state.
-- API loading and error states should be added when route data fetching starts.
+- `/library` shows loading/error states for catalog reads.
+- `/admin/books` shows loading/error/empty states for filtered catalog reads.
+- `/onboarding` shows success/error states for reader identity creation.
 
 UX tradeoff:
 
-- Day 3 uses realistic route surfaces and labels without implementing final forms, so navigation and product shape can stabilize before Phase 2 identity work.
+- Day 4 uses a compact single-screen onboarding form to prove API contracts before investing in a polished multi-step identity flow.
+
+## API Contracts Consumed
+
+- `GET /authors?limit=100`
+- `GET /books?limit=25`
+- `GET /books?limit=20&outcome=&q=`
+- `POST /users`
+- `POST /profiles`
 
 ## Documentation Rule
 

@@ -48,10 +48,21 @@ src/
 
 These endpoints are intentionally thin foundation write/read paths. They establish validated storage contracts before auth, ownership checks, pagination, admin policy, and full CRUD are added.
 
-Catalog filters added on Day 3:
+Catalog filters added on Day 3 and paginated on Day 4:
 
-- `GET /authors?q=&genre=&outcome=`
-- `GET /books?q=&authorId=&genre=&outcome=&pacing=&difficulty=&depth=&format=&maxEstimatedMinutes=`
+- `GET /authors?q=&genre=&outcome=&limit=&offset=`
+- `GET /books?q=&authorId=&genre=&outcome=&pacing=&difficulty=&depth=&format=&maxEstimatedMinutes=&limit=&offset=`
+
+Catalog list response shape:
+
+```json
+{
+  "items": [],
+  "total": 0,
+  "limit": 25,
+  "offset": 0
+}
+```
 
 ## Schema Notes
 
@@ -70,6 +81,8 @@ Catalog filters added on Day 3:
 - Shared domain constants from `@bookcompass/shared` validate outcomes, reading depth, event type, DNF reason, mood, energy, focus, book format, pacing, and difficulty.
 - Numeric fields have explicit bounds for minutes, percentages, page counts, and reading speed.
 - List query DTOs validate catalog filter values before they reach service queries.
+- Catalog pagination is validated and normalized to a maximum page size of 100.
+- Catalog text search escapes regex metacharacters before querying MongoDB.
 
 ## Indexes
 
