@@ -25,3 +25,10 @@ The admin dashboard makes BookCompass operationally tunable. It should help the 
 /admin/analytics/dropoffs
 /admin/analytics/recommendation-paths
 ```
+
+## Day 3 Status
+
+- `/admin` shell route exists in the frontend.
+- `/admin/books` shell route exists in the frontend.
+- Catalog list filters now exist in the API for seed/admin exploration.
+- Full admin CRUD, analytics, role gates, and tuning controls are not implemented yet.

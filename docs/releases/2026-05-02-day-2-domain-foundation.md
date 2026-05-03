@@ -25,12 +25,14 @@ Implemented the first backend product domain foundation for BookCompass.
 - Create DTOs with validation for all new write paths.
 - Minimal REST endpoints for create and list operations.
 - Jest mapping for the shared workspace package during API tests.
+- Frontend visual direction documentation for the antique retro/parchment product look.
 
 ## Technical Notes
 
 - Recommendation scoring is not implemented yet; `RecommendationSession` stores the context and future candidate/explanation structure.
 - Reading events and DNF records are separate collections so raw behavior and structured abandonment risk can evolve independently.
 - Domain modules are skipped under `NODE_ENV=test` to preserve the current no-database e2e test setup.
+- Frontend should use coffee, cream, sepia, beige, off-white, and white as its base palette, with enough dark ink/espresso and restrained accent colors to preserve contrast and avoid a flat monochrome beige UI.
 
 ## Validation
 

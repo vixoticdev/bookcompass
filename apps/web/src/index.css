@@ -27,3 +27,21 @@ textarea,
 select {
   font: inherit;
 }
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.app-texture {
+  background:
+    linear-gradient(90deg, rgb(80 54 22 / 0.035) 1px, transparent 1px),
+    linear-gradient(rgb(80 54 22 / 0.025) 1px, transparent 1px),
+    radial-gradient(circle at 20% 10%, rgb(255 255 255 / 0.55), transparent 30%),
+    #f5f0e6;
+  background-size:
+    28px 28px,
+    28px 28px,
+    100% 100%,
+    auto;
+}
