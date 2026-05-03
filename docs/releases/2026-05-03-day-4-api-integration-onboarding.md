@@ -21,11 +21,13 @@ Started the first end-to-end product slice by connecting frontend routes to live
 - Shared catalog query helpers for pagination and safe text-search regex escaping.
 - Focused API unit tests for author/book filter construction and pagination normalization.
 - Frontend API client with typed catalog, user, and profile calls.
+- Dedicated Axios instance for frontend API calls.
 - React Query hooks for authors, books, and reader identity creation.
 - `/library` route now reads books and authors from the API.
 - `/admin/books` route now filters API-backed catalog records by title and outcome.
 - `/onboarding` route now creates a user and then creates the linked reading profile.
 - Local CORS now accepts both `http://localhost:5173` and `http://127.0.0.1:5173`.
+- Catalog enrichment plan added for metadata layers, anti-DNF signals, external import candidates, and admin review workflow.
 
 ## Technical Notes
 

@@ -18,6 +18,7 @@
 - Domain modules now exist for users, reading profiles, authors, books, reading events, DNF records, and recommendation sessions.
 - Day 3 auth decision is documented in `docs/architecture/auth-ownership.md`: user-owned DTOs keep explicit `userId` until auth guards derive ownership from verified token claims.
 - Initial catalog seed script exists at `npm run seed --workspace @bookcompass/api`.
+- Catalog enrichment plan is documented in `docs/architecture/catalog-enrichment.md`.
 
 ## Module Status
 
@@ -110,6 +111,15 @@ The initial seed script upserts a small nonfiction catalog for MVP recommendatio
 - Eric Ries / `The Lean Startup`
 - Daniel Kahneman / `Thinking, Fast and Slow`
 - Brene Brown / `Dare to Lead`
+
+## Catalog Enrichment Direction
+
+The catalog should grow in layers:
+
+- bibliographic baseline: title, author, description, page count, formats, ISBN, publication year, language
+- recommendation metadata: outcome tags, pacing, difficulty, depth, estimated minutes, style tags
+- anti-DNF signals: slow-start risk, density risk, abstraction level, observed abandonment reasons
+- external connectors: Google Books/Open Library imports with admin review before recommendation eligibility
 
 ## Documentation Rule
 

@@ -1,4 +1,5 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
+import { AxiosError } from 'axios';
+import { axiosInstance } from './axiosInstance';
 
 export type CatalogPage<T> = {
   items: T[];
@@ -64,34 +65,23 @@ export class ApiError extends Error {
   }
 }
 
-function toQueryString(params: Record<string, string | number | undefined>) {
-  const searchParams = new URLSearchParams();
-
-  Object.entries(params).forEach(([key, value]) => {
-    if (value !== undefined && value !== '') {
-      searchParams.set(key, String(value));
-    }
-  });
-
-  const queryString = searchParams.toString();
-  return queryString ? `?${queryString}` : '';
+function cleanParams(params: Record<string, string | number | undefined>) {
+  return Object.fromEntries(
+    Object.entries(params).filter(([, value]) => value !== undefined && value !== ''),
+  );
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...init?.headers,
-    },
-    ...init,
-  });
+function toApiError(error: unknown) {
+  if (error instanceof AxiosError) {
+    const message =
+      typeof error.response?.data === 'string'
+        ? error.response.data
+        : error.message;
 
-  if (!response.ok) {
-    const body = await response.text();
-    throw new ApiError(body || response.statusText, response.status);
+    return new ApiError(message, error.response?.status ?? 0);
   }
 
-  return response.json() as Promise<T>;
+  return error;
 }
 
 export function listAuthors(params: {
@@ -101,7 +91,12 @@ export function listAuthors(params: {
   limit?: number;
   offset?: number;
 } = {}) {
-  return request<CatalogPage<Author>>(`/authors${toQueryString(params)}`);
+  return axiosInstance
+    .get<CatalogPage<Author>>('/authors', { params: cleanParams(params) })
+    .then((response) => response.data)
+    .catch((error: unknown) => {
+      throw toApiError(error);
+    });
 }
 
 export function listBooks(params: {
@@ -117,19 +112,28 @@ export function listBooks(params: {
   limit?: number;
   offset?: number;
 } = {}) {
-  return request<CatalogPage<Book>>(`/books${toQueryString(params)}`);
+  return axiosInstance
+    .get<CatalogPage<Book>>('/books', { params: cleanParams(params) })
+    .then((response) => response.data)
+    .catch((error: unknown) => {
+      throw toApiError(error);
+    });
 }
 
 export function createUser(input: CreateUserInput) {
-  return request<User>('/users', {
-    body: JSON.stringify(input),
-    method: 'POST',
-  });
+  return axiosInstance
+    .post<User>('/users', input)
+    .then((response) => response.data)
+    .catch((error: unknown) => {
+      throw toApiError(error);
+    });
 }
 
 export function createReadingProfile(input: CreateReadingProfileInput) {
-  return request<ReadingProfile>('/profiles', {
-    body: JSON.stringify(input),
-    method: 'POST',
-  });
+  return axiosInstance
+    .post<ReadingProfile>('/profiles', input)
+    .then((response) => response.data)
+    .catch((error: unknown) => {
+      throw toApiError(error);
+    });
 }

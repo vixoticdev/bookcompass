@@ -84,6 +84,7 @@ State management:
 
 - React Router owns route switching.
 - React Query provider is installed in `main.tsx`.
+- `src/lib/axiosInstance.ts` owns the configured Axios instance and base URL.
 - `src/lib/api.ts` owns typed HTTP calls to the backend.
 - `src/lib/queries.ts` owns catalog and reader identity hooks.
 

@@ -183,6 +183,8 @@ As of 2026-05-03:
 - `/library` and `/admin/books` read live catalog data from the API.
 - `/onboarding` can create a user and linked reading profile using the temporary explicit `userId` contract.
 - API CORS allows both `http://localhost:5173` and `http://127.0.0.1:5173` by default; override with comma-separated `WEB_ORIGINS`.
+- Frontend API calls use a dedicated Axios instance in `apps/web/src/lib/axiosInstance.ts`.
+- Catalog enrichment plan is documented in `docs/architecture/catalog-enrichment.md`.
 - Frontend visual direction is antique retro/parchment-inspired with modern SaaS usability.
 - Auth is not implemented yet.
 - Recommendation engine is documented; session storage exists, but scoring/candidate generation is not implemented yet.
@@ -339,6 +341,8 @@ Completed:
 - Wired `/admin/books` to live book filtering by title and outcome.
 - Wired `/onboarding` to create a user and then create a linked reading profile.
 - Fixed local CORS for both `localhost:5173` and `127.0.0.1:5173`.
+- Replaced the frontend fetch wrapper with a dedicated Axios instance.
+- Added catalog enrichment plan covering bibliographic metadata, recommendation metadata, anti-DNF signals, external connectors, and admin review workflow.
 
 Validation:
 
@@ -358,6 +362,7 @@ Recommended Day 5 implementation target:
 - Replace self-service explicit `userId` writes with authenticated ownership where possible.
 - Add frontend auth screens or a temporary session boundary before expanding onboarding.
 - Add route-level loading/error polish and read-only catalog detail pages.
+- Start catalog enrichment fields and manual admin-reviewed metadata for the current seeded books.
 
 ## Month-One Timeline
 
