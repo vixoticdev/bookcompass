@@ -14,6 +14,7 @@
     "lint": "npm run lint --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
     "check": "npm run lint --workspaces --if-present && npm run build --workspaces --if-present",
+    "catalog:ingest": "node tools/catalog-ingestion/ingest.mjs",
     "infra:up": "docker compose up -d",
     "infra:down": "docker compose down"
   },

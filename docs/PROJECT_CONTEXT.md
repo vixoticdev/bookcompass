@@ -185,6 +185,8 @@ As of 2026-05-03:
 - API CORS allows both `http://localhost:5173` and `http://127.0.0.1:5173` by default; override with comma-separated `WEB_ORIGINS`.
 - Frontend API calls use a dedicated Axios instance in `apps/web/src/lib/axiosInstance.ts`.
 - Catalog enrichment plan is documented in `docs/architecture/catalog-enrichment.md`.
+- Catalog ingestion scaffold exists in `tools/catalog-ingestion` for a 1,000-book mixed-genre draft catalog using Open Library discovery plus Google Books enrichment.
+- Google Books enrichment should use `GOOGLE_BOOKS_API_KEY` for real runs; unkeyed requests returned `429` during local smoke validation, while Open Library drafts still exported successfully.
 - Frontend visual direction is antique retro/parchment-inspired with modern SaaS usability.
 - Auth is not implemented yet.
 - Recommendation engine is documented; session storage exists, but scoring/candidate generation is not implemented yet.
@@ -343,6 +345,7 @@ Completed:
 - Fixed local CORS for both `localhost:5173` and `127.0.0.1:5173`.
 - Replaced the frontend fetch wrapper with a dedicated Axios instance.
 - Added catalog enrichment plan covering bibliographic metadata, recommendation metadata, anti-DNF signals, external connectors, and admin review workflow.
+- Added a 1,000-book catalog population plan and ingestion scaffold that exports reviewable JSONL drafts.
 
 Validation:
 
@@ -363,6 +366,8 @@ Recommended Day 5 implementation target:
 - Add frontend auth screens or a temporary session boundary before expanding onboarding.
 - Add route-level loading/error polish and read-only catalog detail pages.
 - Start catalog enrichment fields and manual admin-reviewed metadata for the current seeded books.
+- Run `npm run catalog:ingest -- --target 40 --per-genre 2 --out .local/catalog-smoke.jsonl` to inspect source quality before scaling to 1,000 drafts.
+- Before running the full 1,000-book pass, set `GOOGLE_BOOKS_API_KEY` and decide whether to cache raw source responses under `.local/catalog-cache`.
 
 ## Month-One Timeline
 

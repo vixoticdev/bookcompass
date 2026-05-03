@@ -28,6 +28,7 @@ Started the first end-to-end product slice by connecting frontend routes to live
 - `/onboarding` route now creates a user and then creates the linked reading profile.
 - Local CORS now accepts both `http://localhost:5173` and `http://127.0.0.1:5173`.
 - Catalog enrichment plan added for metadata layers, anti-DNF signals, external import candidates, and admin review workflow.
+- Catalog ingestion scaffold added for 1,000 mixed-genre draft records using Open Library plus Google Books.
 
 ## Technical Notes
 
