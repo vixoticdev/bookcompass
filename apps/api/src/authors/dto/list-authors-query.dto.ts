@@ -1,5 +1,14 @@
 import { OUTCOME_KEYS } from '@bookcompass/shared';
-import { IsIn, IsOptional, IsString, MaxLength } from 'class-validator';
+import { Type } from 'class-transformer';
+import {
+  IsIn,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Max,
+  MaxLength,
+  Min,
+} from 'class-validator';
 
 export class ListAuthorsQueryDto {
   @IsOptional()
@@ -15,4 +24,17 @@ export class ListAuthorsQueryDto {
   @IsOptional()
   @IsIn(OUTCOME_KEYS)
   outcome?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(1)
+  @Max(100)
+  limit?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  offset?: number;
 }

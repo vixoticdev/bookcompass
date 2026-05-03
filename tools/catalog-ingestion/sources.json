@@ -1,0 +1,26 @@
+{
+  "targetTotal": 1000,
+  "perGenre": 50,
+  "genres": [
+    { "key": "business", "label": "Business", "openLibrarySubject": "business", "googleSubject": "business" },
+    { "key": "self-help", "label": "Self-help", "openLibrarySubject": "self-help", "googleSubject": "self-help" },
+    { "key": "psychology", "label": "Psychology", "openLibrarySubject": "psychology", "googleSubject": "psychology" },
+    { "key": "productivity", "label": "Productivity", "openLibrarySubject": "productivity", "googleSubject": "productivity" },
+    { "key": "leadership", "label": "Leadership", "openLibrarySubject": "leadership", "googleSubject": "leadership" },
+    { "key": "technology", "label": "Technology", "openLibrarySubject": "technology", "googleSubject": "technology" },
+    { "key": "science", "label": "Science", "openLibrarySubject": "science", "googleSubject": "science" },
+    { "key": "philosophy", "label": "Philosophy", "openLibrarySubject": "philosophy", "googleSubject": "philosophy" },
+    { "key": "history", "label": "History", "openLibrarySubject": "history", "googleSubject": "history" },
+    { "key": "biography", "label": "Biography", "openLibrarySubject": "biography", "googleSubject": "biography" },
+    { "key": "memoir", "label": "Memoir", "openLibrarySubject": "memoir", "googleSubject": "memoir" },
+    { "key": "literary-fiction", "label": "Literary fiction", "openLibrarySubject": "literary fiction", "googleSubject": "fiction" },
+    { "key": "classics", "label": "Classics", "openLibrarySubject": "classic literature", "googleSubject": "classic" },
+    { "key": "fantasy", "label": "Fantasy", "openLibrarySubject": "fantasy", "googleSubject": "fantasy" },
+    { "key": "science-fiction", "label": "Science fiction", "openLibrarySubject": "science fiction", "googleSubject": "science fiction" },
+    { "key": "mystery", "label": "Mystery", "openLibrarySubject": "mystery", "googleSubject": "mystery" },
+    { "key": "thriller", "label": "Thriller", "openLibrarySubject": "thriller", "googleSubject": "thriller" },
+    { "key": "romance", "label": "Romance", "openLibrarySubject": "romance", "googleSubject": "romance" },
+    { "key": "health", "label": "Health", "openLibrarySubject": "health", "googleSubject": "health" },
+    { "key": "creativity", "label": "Creativity", "openLibrarySubject": "creativity", "googleSubject": "creativity" }
+  ]
+}

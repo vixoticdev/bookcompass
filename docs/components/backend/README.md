@@ -11,13 +11,14 @@
 ## Current Baseline
 
 - Config module is global.
-- CORS is enabled for local web development.
+- CORS is enabled for local web development. By default the API allows `http://localhost:5173` and `http://127.0.0.1:5173`; set comma-separated `WEB_ORIGINS` to override.
 - Validation pipe is enabled globally.
 - Mongoose is wired through `MONGODB_URI`, with local MongoDB fallback.
 - Health endpoint exists at `/health`.
 - Domain modules now exist for users, reading profiles, authors, books, reading events, DNF records, and recommendation sessions.
 - Day 3 auth decision is documented in `docs/architecture/auth-ownership.md`: user-owned DTOs keep explicit `userId` until auth guards derive ownership from verified token claims.
 - Initial catalog seed script exists at `npm run seed --workspace @bookcompass/api`.
+- Catalog enrichment plan is documented in `docs/architecture/catalog-enrichment.md`.
 
 ## Module Status
 
@@ -48,10 +49,21 @@ src/
 
 These endpoints are intentionally thin foundation write/read paths. They establish validated storage contracts before auth, ownership checks, pagination, admin policy, and full CRUD are added.
 
-Catalog filters added on Day 3:
+Catalog filters added on Day 3 and paginated on Day 4:
 
-- `GET /authors?q=&genre=&outcome=`
-- `GET /books?q=&authorId=&genre=&outcome=&pacing=&difficulty=&depth=&format=&maxEstimatedMinutes=`
+- `GET /authors?q=&genre=&outcome=&limit=&offset=`
+- `GET /books?q=&authorId=&genre=&outcome=&pacing=&difficulty=&depth=&format=&maxEstimatedMinutes=&limit=&offset=`
+
+Catalog list response shape:
+
+```json
+{
+  "items": [],
+  "total": 0,
+  "limit": 25,
+  "offset": 0
+}
+```
 
 ## Schema Notes
 
@@ -70,6 +82,8 @@ Catalog filters added on Day 3:
 - Shared domain constants from `@bookcompass/shared` validate outcomes, reading depth, event type, DNF reason, mood, energy, focus, book format, pacing, and difficulty.
 - Numeric fields have explicit bounds for minutes, percentages, page counts, and reading speed.
 - List query DTOs validate catalog filter values before they reach service queries.
+- Catalog pagination is validated and normalized to a maximum page size of 100.
+- Catalog text search escapes regex metacharacters before querying MongoDB.
 
 ## Indexes
 
@@ -97,6 +111,15 @@ The initial seed script upserts a small nonfiction catalog for MVP recommendatio
 - Eric Ries / `The Lean Startup`
 - Daniel Kahneman / `Thinking, Fast and Slow`
 - Brene Brown / `Dare to Lead`
+
+## Catalog Enrichment Direction
+
+The catalog should grow in layers:
+
+- bibliographic baseline: title, author, description, page count, formats, ISBN, publication year, language
+- recommendation metadata: outcome tags, pacing, difficulty, depth, estimated minutes, style tags
+- anti-DNF signals: slow-start risk, density risk, abstraction level, observed abandonment reasons
+- external connectors: Google Books/Open Library imports with admin review before recommendation eligibility
 
 ## Documentation Rule
 

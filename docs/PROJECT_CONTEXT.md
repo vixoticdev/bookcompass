@@ -176,8 +176,17 @@ As of 2026-05-03:
 - MVP auth ownership decision is documented: user-owned DTOs keep explicit `userId` until Phase 2 auth guards derive ownership from verified JWT claims.
 - Shared package contains core domain constants used by backend DTO validation.
 - Backend catalog list endpoints now support basic filters for seed/admin exploration.
+- Backend catalog list endpoints now return paginated page objects with `items`, `total`, `limit`, and `offset`.
 - API seed script exists for initial authors/books: `npm run seed --workspace @bookcompass/api`.
 - Frontend app shell routes exist for onboarding, library, recommendation start/history, and admin placeholders.
+- Frontend has an API client and React Query hooks for books, authors, and reader identity creation.
+- `/library` and `/admin/books` read live catalog data from the API.
+- `/onboarding` can create a user and linked reading profile using the temporary explicit `userId` contract.
+- API CORS allows both `http://localhost:5173` and `http://127.0.0.1:5173` by default; override with comma-separated `WEB_ORIGINS`.
+- Frontend API calls use a dedicated Axios instance in `apps/web/src/lib/axiosInstance.ts`.
+- Catalog enrichment plan is documented in `docs/architecture/catalog-enrichment.md`.
+- Catalog ingestion scaffold exists in `tools/catalog-ingestion` for a 1,000-book mixed-genre draft catalog using Open Library discovery plus Google Books enrichment.
+- Google Books enrichment should use `GOOGLE_BOOKS_API_KEY` for real runs; unkeyed requests returned `429` during local smoke validation, while Open Library drafts still exported successfully.
 - Frontend visual direction is antique retro/parchment-inspired with modern SaaS usability.
 - Auth is not implemented yet.
 - Recommendation engine is documented; session storage exists, but scoring/candidate generation is not implemented yet.
@@ -318,6 +327,48 @@ Recommended Day 4 implementation target:
 - Add API client helpers and React Query data hooks for catalog/admin routes.
 - Decide whether local Day 4 should prioritize auth scaffolding or onboarding UX depth before Phase 2 begins.
 
+### Day 4: 2026-05-03
+
+Goal: complete the first frontend-to-backend slice for catalog browsing and reader identity capture.
+
+Completed:
+
+- Added shared backend catalog pagination helpers and safe regex escaping.
+- Added `limit` and `offset` validation to author/book list query DTOs.
+- Changed `GET /authors` and `GET /books` to return paginated page objects.
+- Added focused unit tests for author filters, book filters, and pagination normalization.
+- Added typed frontend API helpers for authors, books, users, and reading profiles.
+- Added React Query hooks for catalog reads and reader identity creation.
+- Wired `/library` to live books/authors data.
+- Wired `/admin/books` to live book filtering by title and outcome.
+- Wired `/onboarding` to create a user and then create a linked reading profile.
+- Fixed local CORS for both `localhost:5173` and `127.0.0.1:5173`.
+- Replaced the frontend fetch wrapper with a dedicated Axios instance.
+- Added catalog enrichment plan covering bibliographic metadata, recommendation metadata, anti-DNF signals, external connectors, and admin review workflow.
+- Added a 1,000-book catalog population plan and ingestion scaffold that exports reviewable JSONL drafts.
+
+Validation:
+
+- `npm run test --workspace @bookcompass/api -- --runInBand`
+- `npm run build --workspace @bookcompass/api`
+- `npm run build --workspace @bookcompass/web`
+- `npm run check`
+- `npm run test:e2e --workspace @bookcompass/api`
+- Live API smoke test for `GET /books?outcome=productivity&limit=2`
+- Live API smoke test for `GET /authors?limit=2`
+- Live API smoke test for `POST /users` followed by `POST /profiles`
+- Live CORS header smoke test from `Origin: http://127.0.0.1:5173`
+
+Recommended Day 5 implementation target:
+
+- Add auth module scaffolding: password hashing, signup/login endpoints, JWT issuance, and request user extraction.
+- Replace self-service explicit `userId` writes with authenticated ownership where possible.
+- Add frontend auth screens or a temporary session boundary before expanding onboarding.
+- Add route-level loading/error polish and read-only catalog detail pages.
+- Start catalog enrichment fields and manual admin-reviewed metadata for the current seeded books.
+- Run `npm run catalog:ingest -- --target 40 --per-genre 2 --out .local/catalog-smoke.jsonl` to inspect source quality before scaling to 1,000 drafts.
+- Before running the full 1,000-book pass, set `GOOGLE_BOOKS_API_KEY` and decide whether to cache raw source responses under `.local/catalog-cache`.
+
 ## Month-One Timeline
 
 ### Phase 1: Foundation
@@ -338,6 +389,7 @@ Status:
 - Day 1 setup complete.
 - Day 2 backend domain modeling complete.
 - Day 3 app shell, auth ownership decision, seed script, and catalog filters complete.
+- Day 4 API integration and onboarding data flow complete.
 
 ### Phase 2: Reading Identity
 
