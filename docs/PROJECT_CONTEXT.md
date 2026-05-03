@@ -182,6 +182,7 @@ As of 2026-05-03:
 - Frontend has an API client and React Query hooks for books, authors, and reader identity creation.
 - `/library` and `/admin/books` read live catalog data from the API.
 - `/onboarding` can create a user and linked reading profile using the temporary explicit `userId` contract.
+- API CORS allows both `http://localhost:5173` and `http://127.0.0.1:5173` by default; override with comma-separated `WEB_ORIGINS`.
 - Frontend visual direction is antique retro/parchment-inspired with modern SaaS usability.
 - Auth is not implemented yet.
 - Recommendation engine is documented; session storage exists, but scoring/candidate generation is not implemented yet.
@@ -337,6 +338,7 @@ Completed:
 - Wired `/library` to live books/authors data.
 - Wired `/admin/books` to live book filtering by title and outcome.
 - Wired `/onboarding` to create a user and then create a linked reading profile.
+- Fixed local CORS for both `localhost:5173` and `127.0.0.1:5173`.
 
 Validation:
 
@@ -348,6 +350,7 @@ Validation:
 - Live API smoke test for `GET /books?outcome=productivity&limit=2`
 - Live API smoke test for `GET /authors?limit=2`
 - Live API smoke test for `POST /users` followed by `POST /profiles`
+- Live CORS header smoke test from `Origin: http://127.0.0.1:5173`
 
 Recommended Day 5 implementation target:
 

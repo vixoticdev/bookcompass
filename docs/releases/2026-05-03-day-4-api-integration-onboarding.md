@@ -25,6 +25,7 @@ Started the first end-to-end product slice by connecting frontend routes to live
 - `/library` route now reads books and authors from the API.
 - `/admin/books` route now filters API-backed catalog records by title and outcome.
 - `/onboarding` route now creates a user and then creates the linked reading profile.
+- Local CORS now accepts both `http://localhost:5173` and `http://127.0.0.1:5173`.
 
 ## Technical Notes
 
@@ -42,6 +43,7 @@ Started the first end-to-end product slice by connecting frontend routes to live
 - Live API smoke test for `GET /books?outcome=productivity&limit=2`
 - Live API smoke test for `GET /authors?limit=2`
 - Live API smoke test for `POST /users` followed by `POST /profiles`
+- Live CORS header smoke test from `Origin: http://127.0.0.1:5173`
 
 ## Known Gaps
 

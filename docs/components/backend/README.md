@@ -11,7 +11,7 @@
 ## Current Baseline
 
 - Config module is global.
-- CORS is enabled for local web development.
+- CORS is enabled for local web development. By default the API allows `http://localhost:5173` and `http://127.0.0.1:5173`; set comma-separated `WEB_ORIGINS` to override.
 - Validation pipe is enabled globally.
 - Mongoose is wired through `MONGODB_URI`, with local MongoDB fallback.
 - Health endpoint exists at `/health`.
