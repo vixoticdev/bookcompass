@@ -20,6 +20,9 @@ export class User {
   @Prop({ trim: true })
   authProviderId?: string;
 
+  @Prop({ select: false })
+  passwordHash?: string;
+
   @Prop({ default: 'reader', enum: ['reader', 'admin'] })
   role: 'reader' | 'admin';
 }

@@ -6,7 +6,7 @@
 - TypeScript
 - MongoDB through Mongoose
 - Redis planned for caching and queues
-- JWT-backed auth planned for Phase 2
+- JWT-backed auth with local password signup/login for MVP
 
 ## Current Baseline
 
@@ -15,8 +15,8 @@
 - Validation pipe is enabled globally.
 - Mongoose is wired through `MONGODB_URI`, with local MongoDB fallback.
 - Health endpoint exists at `/health`.
-- Domain modules now exist for users, reading profiles, authors, books, reading events, DNF records, and recommendation sessions.
-- Day 3 auth decision is documented in `docs/architecture/auth-ownership.md`: user-owned DTOs keep explicit `userId` until auth guards derive ownership from verified token claims.
+- Domain modules now exist for auth, users, reading profiles, authors, books, reading events, DNF records, and recommendation sessions.
+- Day 5 auth ownership is documented in `docs/architecture/auth-ownership.md`: self-service user-owned writes derive `userId` from verified JWT claims.
 - Initial catalog seed script exists at `npm run seed --workspace @bookcompass/api`.
 - Catalog enrichment plan is documented in `docs/architecture/catalog-enrichment.md`.
 
@@ -24,7 +24,7 @@
 
 ```text
 src/
-  auth/                 decided: JWT-backed ownership contract, implementation planned
+  auth/                 implemented: local signup/login, password hashing, JWT issuance, request user extraction
   users/                implemented: schema, DTO, service, minimal REST
   profiles/             implemented: schema, DTO, service, minimal REST
   books/                implemented: schema, DTO, service, minimal REST
@@ -39,6 +39,7 @@ src/
 
 ## Current Endpoints
 
+- `POST /auth/signup`, `POST /auth/login`, `GET /auth/me`
 - `POST /users`, `GET /users`
 - `POST /profiles`, `GET /profiles`
 - `POST /authors`, `GET /authors`
@@ -47,7 +48,7 @@ src/
 - `POST /dnf-records`, `GET /dnf-records`
 - `POST /recommendation-sessions`, `GET /recommendation-sessions`
 
-These endpoints are intentionally thin foundation write/read paths. They establish validated storage contracts before auth, ownership checks, pagination, admin policy, and full CRUD are added.
+These endpoints are intentionally thin foundation write/read paths. Self-service write endpoints for profiles, reading events, DNF records, and recommendation sessions require a bearer token and derive ownership from the authenticated request. Catalog reads and current list endpoints remain open for local MVP exploration until role policy is added.
 
 Catalog filters added on Day 3 and paginated on Day 4:
 
@@ -67,7 +68,7 @@ Catalog list response shape:
 
 ## Schema Notes
 
-- `User`: display name, unique indexed email, optional auth provider id, role.
+- `User`: display name, unique indexed email, optional auth provider id, hidden password hash, role.
 - `ReadingProfile`: one profile per user with genres, target outcomes, depth, pacing/difficulty tolerance, formats, daily minutes, and estimated speed.
 - `Author`: unique indexed name, bio, known genres, and outcome strengths.
 - `Book`: title, author reference, ISBN, description, genres, outcome tags, pacing, difficulty, depth, formats, page count, and estimated minutes.
@@ -78,6 +79,7 @@ Catalog list response shape:
 ## Validation Rules
 
 - All write DTOs use `class-validator`.
+- Auth DTOs validate email and password length before hashing or credential checks.
 - Mongo references use `IsMongoId`.
 - Shared domain constants from `@bookcompass/shared` validate outcomes, reading depth, event type, DNF reason, mood, energy, focus, book format, pacing, and difficulty.
 - Numeric fields have explicit bounds for minutes, percentages, page counts, and reading speed.
@@ -101,6 +103,14 @@ Catalog list response shape:
 - DTO validation on all write endpoints.
 - Service methods should keep business logic outside controllers.
 - Recommendation explanations should be generated from scoring signals, not free-form guesses.
+
+## Auth Notes
+
+- Local passwords are hashed with `bcryptjs`.
+- JWTs are signed with `JWT_SECRET` or a local development fallback.
+- `GET /auth/me` returns the current public user from a valid bearer token.
+- Frontend self-service clients should not send `userId` for profile, event, DNF, or recommendation session creation.
+- Admin ownership override and role policy are still planned.
 
 ## Seed Data
 

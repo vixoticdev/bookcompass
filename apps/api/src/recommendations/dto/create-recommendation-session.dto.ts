@@ -10,6 +10,7 @@ import {
   IsIn,
   IsMongoId,
   IsNumber,
+  IsOptional,
   Max,
   Min,
   ValidateNested,
@@ -39,8 +40,9 @@ export class CreateRecommendationContextDto {
 }
 
 export class CreateRecommendationSessionDto {
+  @IsOptional()
   @IsMongoId()
-  userId: string;
+  userId?: string;
 
   @ValidateNested()
   @Type(() => CreateRecommendationContextDto)

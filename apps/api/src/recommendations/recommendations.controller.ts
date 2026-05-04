@@ -1,4 +1,7 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { CurrentUser } from '../auth/current-user.decorator';
+import type { AuthenticatedUser } from '../auth/auth.types';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CreateRecommendationSessionDto } from './dto/create-recommendation-session.dto';
 import { RecommendationsService } from './recommendations.service';
 
@@ -8,11 +11,16 @@ export class RecommendationsController {
     private readonly recommendationsService: RecommendationsService,
   ) {}
 
+  @UseGuards(JwtAuthGuard)
   @Post()
   create(
     @Body() createRecommendationSessionDto: CreateRecommendationSessionDto,
+    @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.recommendationsService.create(createRecommendationSessionDto);
+    return this.recommendationsService.create({
+      ...createRecommendationSessionDto,
+      userId: user.id,
+    });
   }
 
   @Get()

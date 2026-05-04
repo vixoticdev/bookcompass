@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
+import { AuthModule } from '../auth/auth.module';
 import { RecommendationsController } from './recommendations.controller';
 import { RecommendationsService } from './recommendations.service';
 import {
@@ -9,6 +10,7 @@ import {
 
 @Module({
   imports: [
+    AuthModule,
     MongooseModule.forFeature([
       { name: RecommendationSession.name, schema: RecommendationSessionSchema },
     ]),

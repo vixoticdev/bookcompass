@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -10,8 +10,35 @@ export class UsersService {
     @InjectModel(User.name) private readonly userModel: Model<User>,
   ) {}
 
-  create(createUserDto: CreateUserDto) {
-    return this.userModel.create(createUserDto);
+  async create(createUserDto: CreateUserDto & { passwordHash?: string }) {
+    try {
+      return await this.userModel.create(createUserDto);
+    } catch (error: unknown) {
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        error.code === 11000
+      ) {
+        throw new ConflictException('A user with this email already exists.');
+      }
+
+      throw error;
+    }
+  }
+
+  findByEmail(email: string, options: { includePasswordHash?: boolean } = {}) {
+    const query = this.userModel.findOne({ email: email.toLowerCase().trim() });
+
+    if (options.includePasswordHash) {
+      query.select('+passwordHash');
+    }
+
+    return query.exec();
+  }
+
+  findById(userId: string) {
+    return this.userModel.findById(userId).exec();
   }
 
   findAll() {

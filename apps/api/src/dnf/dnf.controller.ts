@@ -1,4 +1,7 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { CurrentUser } from '../auth/current-user.decorator';
+import type { AuthenticatedUser } from '../auth/auth.types';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { DnfService } from './dnf.service';
 import { CreateDnfRecordDto } from './dto/create-dnf-record.dto';
 
@@ -6,9 +9,16 @@ import { CreateDnfRecordDto } from './dto/create-dnf-record.dto';
 export class DnfController {
   constructor(private readonly dnfService: DnfService) {}
 
+  @UseGuards(JwtAuthGuard)
   @Post()
-  create(@Body() createDnfRecordDto: CreateDnfRecordDto) {
-    return this.dnfService.create(createDnfRecordDto);
+  create(
+    @Body() createDnfRecordDto: CreateDnfRecordDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.dnfService.create({
+      ...createDnfRecordDto,
+      userId: user.id,
+    });
   }
 
   @Get()

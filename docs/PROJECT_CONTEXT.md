@@ -163,7 +163,7 @@ Atlas note:
 
 ## Current Project State
 
-As of 2026-05-03:
+As of 2026-05-04:
 
 - Monorepo exists and is pushed to GitHub.
 - Frontend and backend can run locally.
@@ -172,8 +172,9 @@ As of 2026-05-03:
 - MongoDB Atlas project/cluster exists and connectivity was verified.
 - Atlas database name in URI should be `bookcompass`.
 - Backend has global config, CORS, validation pipe, health endpoint, and Mongoose connection.
-- Backend domain modules are implemented for users, reading profiles, authors, books, reading events, DNF records, and recommendation sessions.
-- MVP auth ownership decision is documented: user-owned DTOs keep explicit `userId` until Phase 2 auth guards derive ownership from verified JWT claims.
+- Backend domain modules are implemented for users, auth, reading profiles, authors, books, reading events, DNF records, and recommendation sessions.
+- MVP auth is scaffolded with local password signup/login, bcryptjs password hashing, JWT issuance, `GET /auth/me`, and a reusable JWT guard.
+- User-owned self-service write endpoints for profiles, reading events, DNF records, and recommendation sessions now derive `userId` from the authenticated request.
 - Shared package contains core domain constants used by backend DTO validation.
 - Backend catalog list endpoints now support basic filters for seed/admin exploration.
 - Backend catalog list endpoints now return paginated page objects with `items`, `total`, `limit`, and `offset`.
@@ -181,14 +182,16 @@ As of 2026-05-03:
 - Frontend app shell routes exist for onboarding, library, recommendation start/history, and admin placeholders.
 - Frontend has an API client and React Query hooks for books, authors, and reader identity creation.
 - `/library` and `/admin/books` read live catalog data from the API.
-- `/onboarding` can create a user and linked reading profile using the temporary explicit `userId` contract.
+- `/login` can create a temporary authenticated frontend session.
+- `/onboarding` signs up a reader, stores the local JWT, and creates a linked reading profile from authenticated ownership.
 - API CORS allows both `http://localhost:5173` and `http://127.0.0.1:5173` by default; override with comma-separated `WEB_ORIGINS`.
 - Frontend API calls use a dedicated Axios instance in `apps/web/src/lib/axiosInstance.ts`.
 - Catalog enrichment plan is documented in `docs/architecture/catalog-enrichment.md`.
 - Catalog ingestion scaffold exists in `tools/catalog-ingestion` for a 1,000-book mixed-genre draft catalog using Open Library discovery plus Google Books enrichment.
+- Catalog smoke ingestion was run for 40 mixed-genre drafts and wrote `.local/catalog-smoke.jsonl` for local inspection.
 - Google Books enrichment should use `GOOGLE_BOOKS_API_KEY` for real runs; unkeyed requests returned `429` during local smoke validation, while Open Library drafts still exported successfully.
 - Frontend visual direction is antique retro/parchment-inspired with modern SaaS usability.
-- Auth is not implemented yet.
+- Auth role policy and production identity provider integration are not implemented yet.
 - Recommendation engine is documented; session storage exists, but scoring/candidate generation is not implemented yet.
 - Admin dashboard is documented but not implemented yet.
 - CI/CD is not configured yet.
@@ -369,6 +372,41 @@ Recommended Day 5 implementation target:
 - Run `npm run catalog:ingest -- --target 40 --per-genre 2 --out .local/catalog-smoke.jsonl` to inspect source quality before scaling to 1,000 drafts.
 - Before running the full 1,000-book pass, set `GOOGLE_BOOKS_API_KEY` and decide whether to cache raw source responses under `.local/catalog-cache`.
 
+### Day 5: 2026-05-04
+
+Goal: add the first authenticated ownership boundary and validate catalog ingestion source quality.
+
+Completed:
+
+- Added `apps/api/src/auth` with signup, login, `GET /auth/me`, JWT issuance, and a reusable JWT guard.
+- Added bcryptjs password hashing and a hidden `passwordHash` field on users.
+- Added duplicate email conflict handling in `UsersService`.
+- Changed self-service writes for reading profiles, reading events, DNF records, and recommendation sessions to derive `userId` from the bearer token.
+- Kept catalog reads and current list/admin exploration endpoints unguarded for MVP development.
+- Added frontend `/login`.
+- Updated `/onboarding` to sign up the reader, store the local access token, and create the reading profile through authenticated ownership instead of sending a user ID.
+- Added an Axios request interceptor that attaches the local bearer token.
+- Added focused auth service tests for signup hashing and invalid login rejection.
+- Ran catalog smoke ingestion for 40 drafts across the configured genre lanes.
+
+Validation:
+
+- `npm run build --workspace @bookcompass/api`
+- `npm run build --workspace @bookcompass/web`
+- `npm run check`
+- `npm run test --workspace @bookcompass/api -- --runInBand`
+- `npm run test:e2e --workspace @bookcompass/api`
+- `npm run catalog:ingest -- --target 40 --per-genre 2 --out .local/catalog-smoke.jsonl`
+- Live API smoke test for `POST /auth/signup` followed by authenticated `POST /profiles`
+
+Recommended Day 6 implementation target:
+
+- Add `GET /profiles/me` and profile update support for the authenticated reader.
+- Add authenticated frontend session hydration from `GET /auth/me` instead of only local token storage.
+- Start the reading identity depth flow for preferences, liked/disliked/completed books, and DNF capture.
+- Add role policy before exposing admin mutations.
+- Review `.local/catalog-smoke.jsonl` for source quality and decide whether to add raw response caching before the 1,000-book draft run.
+
 ## Month-One Timeline
 
 ### Phase 1: Foundation
@@ -390,6 +428,7 @@ Status:
 - Day 2 backend domain modeling complete.
 - Day 3 app shell, auth ownership decision, seed script, and catalog filters complete.
 - Day 4 API integration and onboarding data flow complete.
+- Day 5 auth ownership scaffold and catalog smoke ingestion complete.
 
 ### Phase 2: Reading Identity
 
@@ -502,14 +541,11 @@ Output:
 
 ## Immediate Next Steps
 
-1. Preserve the existing modified recommendation-engine docs unless intentionally committing them.
-2. Create backend modules/schemas for the core domain.
-3. Decide auth implementation:
-   - likely JWT local auth for MVP, or Firebase Auth if deployment speed becomes more important.
-4. Add seed data plan for books/authors/outcomes.
-5. Add API contracts for profile, books, events, DNF, and recommendation sessions.
-6. Build the initial frontend shell using the documented antique retro/parchment visual direction.
-7. Keep frontend flows simple until backend contracts are stable.
+1. Add authenticated profile read/update endpoints and frontend session hydration.
+2. Expand onboarding into the Phase 2 reading identity flow.
+3. Add liked/disliked/completed/DNF capture against authenticated ownership.
+4. Add role policy before admin mutations are exposed.
+5. Review `.local/catalog-smoke.jsonl` and decide raw source caching before the 1,000-book draft run.
 
 ## Engineering Rules for Future Instances
 
