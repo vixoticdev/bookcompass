@@ -73,6 +73,7 @@ The frontend owns:
 
 Routes now mounted in the Vite app:
 
+- `/login`: temporary local reader session form.
 - `/onboarding`: placeholder reader identity capture surface.
 - `/library`: placeholder catalog/library table using seeded book examples.
 - `/recommendations/new`: placeholder decision-session entry flow.
@@ -94,17 +95,21 @@ Loading/error/empty states:
 - `/library` shows loading/error states for catalog reads.
 - `/admin/books` shows loading/error/empty states for filtered catalog reads.
 - `/onboarding` shows success/error states for reader identity creation.
+- `/login` shows success/error states for local session creation.
 
-UX tradeoff:
+Day 5 session boundary:
 
-- Day 4 uses a compact single-screen onboarding form to prove API contracts before investing in a polished multi-step identity flow.
+- `/onboarding` now signs up the reader, stores the local access token in `localStorage`, and creates the reading profile through authenticated ownership.
+- Axios attaches the stored bearer token to API calls.
+- This is an MVP session boundary, not final production session management.
 
 ## API Contracts Consumed
 
 - `GET /authors?limit=100`
 - `GET /books?limit=25`
 - `GET /books?limit=20&outcome=&q=`
-- `POST /users`
+- `POST /auth/signup`
+- `POST /auth/login`
 - `POST /profiles`
 
 ## Documentation Rule

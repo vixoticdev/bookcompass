@@ -13,8 +13,9 @@ import {
 } from 'class-validator';
 
 export class CreateReadingEventDto {
+  @IsOptional()
   @IsMongoId()
-  userId: string;
+  userId?: string;
 
   @IsMongoId()
   bookId: string;

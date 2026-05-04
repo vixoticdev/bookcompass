@@ -12,8 +12,9 @@ import {
 } from 'class-validator';
 
 export class CreateDnfRecordDto {
+  @IsOptional()
   @IsMongoId()
-  userId: string;
+  userId?: string;
 
   @IsMongoId()
   bookId: string;

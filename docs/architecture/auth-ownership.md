@@ -2,11 +2,13 @@
 
 Date: 2026-05-03
 
+Updated: 2026-05-04
+
 ## Decision
 
 BookCompass will use JWT-backed authentication for the MVP API boundary. The likely production integration remains an external identity provider, but the backend contract should depend on verified identity claims rather than provider-specific SDK types.
 
-Until signup/login is implemented in Phase 2, user-owned write DTOs keep an explicit `userId` field. This keeps Day 2 domain endpoints usable for local development, seeding, and API exploration without pretending auth exists.
+Day 5 implemented the first local JWT auth boundary. Signup/login are now available through the API, and self-service user-owned writes derive ownership from the authenticated request.
 
 ## Ownership Contract
 
@@ -17,25 +19,19 @@ User-owned resources:
 - DNF records
 - recommendation sessions
 
-Current contract:
+Current self-service contract:
 
-- clients send `userId` explicitly
-- DTOs validate `userId` as a Mongo ID
-- services persist the user reference
-
-Phase 2 contract:
-
-- auth middleware/guards verify the access token
+- auth guards verify the access token
 - controllers derive the owner from the authenticated request
 - clients stop sending owner IDs for self-service user flows
 - admin-only flows may keep explicit user selectors behind role checks
 
 ## Rationale
 
-This avoids a partial auth implementation during foundation work while preserving clear ownership boundaries in schemas and indexes. The recommendation engine can already query behavior by user, and the future auth layer can replace the source of `userId` without changing the core data model.
+This preserves clear ownership boundaries in schemas and indexes while making the MVP safer for self-service flows. The recommendation engine can already query behavior by user, and future external identity provider work can replace token issuance without changing the core data model.
 
 ## Consequences
 
-- Day 3 endpoints are still development/admin-safe only.
-- Public deployment must wait for auth guards and role policy.
-- Tests added before Phase 2 should treat `userId` as an explicit contract; tests after Phase 2 should cover derived ownership.
+- Catalog reads and current list endpoints are still development/admin-friendly.
+- Public deployment still needs stronger role policy, production JWT secret management, and admin authorization.
+- Tests for user-owned writes should cover derived ownership from JWT claims.

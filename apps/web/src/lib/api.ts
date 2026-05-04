@@ -41,8 +41,22 @@ export type User = CreateUserInput & {
   _id: string;
 };
 
+export type AuthInput = {
+  email: string;
+  password: string;
+};
+
+export type SignupInput = AuthInput & {
+  displayName: string;
+};
+
+export type AuthResponse = {
+  accessToken: string;
+  user: User;
+};
+
 export type CreateReadingProfileInput = {
-  userId: string;
+  userId?: string;
   favoriteGenres?: string[];
   targetOutcomes?: string[];
   preferredDepth?: string;
@@ -123,6 +137,24 @@ export function listBooks(params: {
 export function createUser(input: CreateUserInput) {
   return axiosInstance
     .post<User>('/users', input)
+    .then((response) => response.data)
+    .catch((error: unknown) => {
+      throw toApiError(error);
+    });
+}
+
+export function signup(input: SignupInput) {
+  return axiosInstance
+    .post<AuthResponse>('/auth/signup', input)
+    .then((response) => response.data)
+    .catch((error: unknown) => {
+      throw toApiError(error);
+    });
+}
+
+export function login(input: AuthInput) {
+  return axiosInstance
+    .post<AuthResponse>('/auth/login', input)
     .then((response) => response.data)
     .catch((error: unknown) => {
       throw toApiError(error);

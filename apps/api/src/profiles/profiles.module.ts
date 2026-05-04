@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
+import { AuthModule } from '../auth/auth.module';
 import { ProfilesController } from './profiles.controller';
 import { ProfilesService } from './profiles.service';
 import {
@@ -9,6 +10,7 @@ import {
 
 @Module({
   imports: [
+    AuthModule,
     MongooseModule.forFeature([
       { name: ReadingProfile.name, schema: ReadingProfileSchema },
     ]),

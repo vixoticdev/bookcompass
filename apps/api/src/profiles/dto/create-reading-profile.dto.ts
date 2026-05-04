@@ -20,8 +20,9 @@ import {
 } from 'class-validator';
 
 export class CreateReadingProfileDto {
+  @IsOptional()
   @IsMongoId()
-  userId: string;
+  userId?: string;
 
   @IsOptional()
   @IsArray()

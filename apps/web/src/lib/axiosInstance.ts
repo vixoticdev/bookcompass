@@ -9,3 +9,16 @@ export const axiosInstance = axios.create({
   },
   withCredentials: true,
 });
+
+axiosInstance.interceptors.request.use((config) => {
+  const token =
+    typeof window === 'undefined'
+      ? undefined
+      : window.localStorage.getItem('bookcompass.accessToken');
+
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+
+  return config;
+});

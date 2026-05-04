@@ -13,9 +13,15 @@ import {
 } from 'lucide-react'
 import { type FormEvent, type ReactNode, useMemo, useState } from 'react'
 import { NavLink, Navigate, Route, Routes } from 'react-router-dom'
-import { useAuthors, useBooks, useCreateReadingIdentity } from './lib/queries'
+import {
+  useAuthors,
+  useBooks,
+  useCreateReadingIdentity,
+  useLogin,
+} from './lib/queries'
 
 const routes = [
+  { to: '/login', label: 'Login', icon: UserRound },
   { to: '/onboarding', label: 'Onboarding', icon: UserRound },
   { to: '/library', label: 'Library', icon: LibraryBig },
   { to: '/recommendations/new', label: 'Recommend', icon: Compass },
@@ -95,6 +101,7 @@ function Shell() {
           <section className="px-5 py-6 sm:px-8">
             <Routes>
               <Route element={<Navigate replace to="/onboarding" />} path="/" />
+              <Route element={<Login />} path="/login" />
               <Route element={<Onboarding />} path="/onboarding" />
               <Route element={<Library />} path="/library" />
               <Route element={<RecommendationStart />} path="/recommendations/new" />
@@ -134,10 +141,12 @@ function PageHeader({
 
 function TextField({
   label,
+  type = 'text',
   value,
   onChange,
 }: {
   label: string
+  type?: string
   value: string
   onChange: (value: string) => void
 }) {
@@ -147,6 +156,7 @@ function TextField({
       <input
         className="h-11 rounded-md border border-[#cfc0aa] bg-white px-3 text-sm outline-none focus:border-[#315d48]"
         onChange={(event) => onChange(event.target.value)}
+        type={type}
         value={value}
       />
     </label>
@@ -215,6 +225,7 @@ function Onboarding() {
   const createReadingIdentity = useCreateReadingIdentity()
   const [displayName, setDisplayName] = useState('Demo Reader')
   const [email, setEmail] = useState('reader@bookcompass.local')
+  const [password, setPassword] = useState('bookcompass-demo')
   const [targetOutcome, setTargetOutcome] = useState('productivity')
   const [favoriteGenres, setFavoriteGenres] = useState(
     'Productivity, Self-improvement',
@@ -232,7 +243,7 @@ function Onboarding() {
       user: {
         displayName,
         email,
-        role: 'reader',
+        password,
       },
       profile: {
         dailyReadingMinutes,
@@ -269,6 +280,12 @@ function Onboarding() {
               value={displayName}
             />
             <TextField label="Email" onChange={setEmail} value={email} />
+            <TextField
+              label="Password"
+              onChange={setPassword}
+              type="password"
+              value={password}
+            />
             <SelectField
               label="Target outcome"
               onChange={setTargetOutcome}
@@ -346,7 +363,7 @@ function Onboarding() {
           {createReadingIdentity.isSuccess ? (
             <StatusMessage tone="success">
               Saved {createReadingIdentity.data.user.displayName} with a reading
-              profile tied to user ID {createReadingIdentity.data.user._id}.
+              profile tied to the current authenticated session.
             </StatusMessage>
           ) : null}
           {createReadingIdentity.isError ? (
@@ -361,11 +378,65 @@ function Onboarding() {
           <Gauge className="text-[#315d48]" size={22} />
           <h2 className="mt-4 text-xl font-semibold">Day 4 data flow</h2>
           <p className="mt-2 text-sm leading-6 text-[#5c4f40]">
-            This form creates a user first, then creates the reading profile with
-            that user ID. Auth can later replace this explicit ownership handoff.
+            This form signs up a reader, stores the local access token, then
+            creates the reading profile from the authenticated request.
           </p>
         </div>
       </section>
+    </div>
+  )
+}
+
+function Login() {
+  const login = useLogin()
+  const [email, setEmail] = useState('reader@bookcompass.local')
+  const [password, setPassword] = useState('bookcompass-demo')
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    login.mutate({ email, password })
+  }
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        description="Use an existing local reader account before creating authenticated profile, event, DNF, or recommendation records."
+        eyebrow="Session"
+        title="Continue with a reader session"
+      />
+
+      <form
+        className="max-w-xl rounded-md border border-[#d8cbb8] bg-[#fffaf0] p-5"
+        onSubmit={handleSubmit}
+      >
+        <div className="grid gap-4">
+          <TextField label="Email" onChange={setEmail} value={email} />
+          <TextField
+            label="Password"
+            onChange={setPassword}
+            type="password"
+            value={password}
+          />
+        </div>
+        <button
+          className="mt-5 inline-flex h-11 items-center gap-2 rounded-md bg-[#2f5d46] px-4 text-sm font-semibold text-[#fffaf0] disabled:cursor-not-allowed disabled:opacity-60"
+          disabled={login.isPending}
+          type="submit"
+        >
+          <UserRound size={17} />
+          {login.isPending ? 'Opening session' : 'Login'}
+        </button>
+        {login.isSuccess ? (
+          <StatusMessage tone="success">
+            Session ready for {login.data.user.displayName}.
+          </StatusMessage>
+        ) : null}
+        {login.isError ? (
+          <StatusMessage tone="error">
+            Could not login with those credentials.
+          </StatusMessage>
+        ) : null}
+      </form>
     </div>
   )
 }
