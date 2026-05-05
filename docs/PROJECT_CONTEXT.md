@@ -163,7 +163,7 @@ Atlas note:
 
 ## Current Project State
 
-As of 2026-05-04:
+As of 2026-05-05:
 
 - Monorepo exists and is pushed to GitHub.
 - Frontend and backend can run locally.
@@ -178,22 +178,30 @@ As of 2026-05-04:
 - Shared package contains core domain constants used by backend DTO validation.
 - Backend catalog list endpoints now support basic filters for seed/admin exploration.
 - Backend catalog list endpoints now return paginated page objects with `items`, `total`, `limit`, and `offset`.
-- API seed script exists for initial authors/books: `npm run seed --workspace @bookcompass/api`.
+- API seed script exists for authors/books: `npm run seed --workspace @bookcompass/api`.
+- API seed script now includes a manually reviewed Day 6 catalog expansion with 25 authors and 27 books total for local exploration.
 - Frontend app shell routes exist for onboarding, library, recommendation start/history, and admin placeholders.
 - Frontend has an API client and React Query hooks for books, authors, and reader identity creation.
+- Frontend browser tab uses the BookCompass PNG icon at `apps/web/public/bookcompass-icon.png` and the page title is `BookCompass`.
 - `/library` and `/admin/books` read live catalog data from the API.
 - `/login` can create a temporary authenticated frontend session.
 - `/onboarding` signs up a reader, stores the local JWT, and creates a linked reading profile from authenticated ownership.
 - API CORS allows both `http://localhost:5173` and `http://127.0.0.1:5173` by default; override with comma-separated `WEB_ORIGINS`.
 - Frontend API calls use a dedicated Axios instance in `apps/web/src/lib/axiosInstance.ts`.
+- Backend exposes authenticated reader profile retrieval and update through `GET /profiles/me` and `PATCH /profiles/me`.
+- Frontend session state hydrates from `GET /auth/me` when a local bearer token exists.
+- `/onboarding` can now update an existing authenticated profile and capture first reading behavior signals for liked, disliked, completed, saved, and DNF patterns.
 - Catalog enrichment plan is documented in `docs/architecture/catalog-enrichment.md`.
 - Catalog ingestion scaffold exists in `tools/catalog-ingestion` for a 1,000-book mixed-genre draft catalog using Open Library discovery plus Google Books enrichment.
 - Catalog smoke ingestion was run for 40 mixed-genre drafts and wrote `.local/catalog-smoke.jsonl` for local inspection.
 - Google Books enrichment should use `GOOGLE_BOOKS_API_KEY` for real runs; unkeyed requests returned `429` during local smoke validation, while Open Library drafts still exported successfully.
+- Day 6 catalog smoke review found 40 drafts, 40 ISBNs, 29 Google Books volume IDs, 18 thumbnails, all marked `needs-review`, and zero recommendation-eligible records by design.
+- Local Docker MongoDB was seeded with the Day 6 manual catalog batch and verified through `GET /books` and `GET /authors`.
 - Frontend visual direction is antique retro/parchment-inspired with modern SaaS usability.
 - Auth role policy and production identity provider integration are not implemented yet.
 - Recommendation engine is documented; session storage exists, but scoring/candidate generation is not implemented yet.
 - Admin dashboard is documented but not implemented yet.
+- Admin role policy is still not implemented; avoid exposing admin mutations until guards are added.
 - CI/CD is not configured yet.
 
 Important uncommitted context:
@@ -406,6 +414,63 @@ Recommended Day 6 implementation target:
 - Start the reading identity depth flow for preferences, liked/disliked/completed books, and DNF capture.
 - Add role policy before exposing admin mutations.
 - Review `.local/catalog-smoke.jsonl` for source quality and decide whether to add raw response caching before the 1,000-book draft run.
+
+### Day 6: 2026-05-05
+
+Goal: start the reading identity phase with authenticated profile hydration, profile updates, and behavior signal capture.
+
+Completed:
+
+- Added `GET /profiles/me` for the authenticated reader.
+- Added `PATCH /profiles/me` with validated profile preference updates.
+- Added a profile update DTO that prevents clients from changing profile ownership through the update path.
+- Added frontend API helpers and React Query hooks for:
+  - current user hydration through `GET /auth/me`
+  - current profile retrieval through `GET /profiles/me`
+  - current profile updates through `PATCH /profiles/me`
+  - reading event capture
+  - DNF record capture
+- Added a session status panel to the app shell using hydrated auth state.
+- Expanded `/onboarding` into a richer reading identity flow:
+  - profile creation for a new signup
+  - profile creation for an already authenticated user without a profile
+  - profile update for an authenticated user with a profile
+  - favorite and disliked genre capture
+  - target outcome, format, depth, pacing, difficulty, daily minutes, and reading speed capture
+  - liked, disliked, completed, saved, and DNF signal capture against catalog books
+- Reviewed `.local/catalog-smoke.jsonl`:
+  - 40 drafts exported
+  - 40 records have ISBNs
+  - 29 records have Google Books volume IDs
+  - 18 records have thumbnails
+  - all 40 records remain `needs-review`
+  - zero records are recommendation eligible, which matches the admin-review-first catalog plan
+- Manually promoted a curated subset of smoke candidates into `apps/api/src/seed/seed.ts`.
+- Expanded the repeatable local seed catalog to 25 authors and 27 books total.
+- Seeded local Docker MongoDB with the expanded catalog.
+- Verified `GET /books` returns 27 records and `GET /authors` returns 25 records from the local API.
+- Replaced the browser tab favicon with the provided BookCompass icon PNG.
+- Updated the browser tab title from `web` to `BookCompass`.
+
+Validation:
+
+- `npm run build --workspace @bookcompass/api`
+- `npm run build --workspace @bookcompass/web`
+- `npm run test --workspace @bookcompass/api -- --runInBand`
+- `npm run check`
+- `npm run test:e2e --workspace @bookcompass/api`
+- `MONGODB_URI=mongodb://localhost:27017/bookcompass npm run seed --workspace @bookcompass/api`
+- Live API smoke test for `GET /books?limit=3`
+- Live API smoke test for `GET /authors?limit=3`
+- `npm run build --workspace @bookcompass/web`
+
+Recommended Day 7 implementation target:
+
+- Add an admin role guard/policy before any admin mutations.
+- Add reader-owned list endpoints for reading events and DNF records so the profile page can show captured behavior history.
+- Improve onboarding state boundaries by separating signup, profile preferences, and behavior capture into smaller route components.
+- Add focused backend tests for `GET /profiles/me` and `PATCH /profiles/me`.
+- Add raw source response caching before running the full 1,000-book catalog draft ingestion.
 
 ## Month-One Timeline
 

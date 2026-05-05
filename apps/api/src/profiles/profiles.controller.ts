@@ -1,8 +1,9 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Patch, Post, UseGuards } from '@nestjs/common';
 import { CurrentUser } from '../auth/current-user.decorator';
 import type { AuthenticatedUser } from '../auth/auth.types';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CreateReadingProfileDto } from './dto/create-reading-profile.dto';
+import { UpdateReadingProfileDto } from './dto/update-reading-profile.dto';
 import { ProfilesService } from './profiles.service';
 
 @Controller('profiles')
@@ -19,6 +20,24 @@ export class ProfilesController {
       ...createReadingProfileDto,
       userId: user.id,
     });
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('me')
+  me(@CurrentUser() user: AuthenticatedUser) {
+    return this.profilesService.findByUserId(user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('me')
+  updateMe(
+    @Body() updateReadingProfileDto: UpdateReadingProfileDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.profilesService.updateByUserId(
+      user.id,
+      updateReadingProfileDto,
+    );
   }
 
   @Get()

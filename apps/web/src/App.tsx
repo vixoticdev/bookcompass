@@ -11,13 +11,25 @@ import {
   Sparkles,
   UserRound,
 } from 'lucide-react'
-import { type FormEvent, type ReactNode, useMemo, useState } from 'react'
+import {
+  type FormEvent,
+  type ReactNode,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react'
 import { NavLink, Navigate, Route, Routes } from 'react-router-dom'
 import {
   useAuthors,
   useBooks,
+  useCreateDnfRecord,
+  useCreateMyReadingProfile,
+  useCreateReadingEvent,
   useCreateReadingIdentity,
+  useCurrentUser,
   useLogin,
+  useMyReadingProfile,
+  useUpdateMyReadingProfile,
 } from './lib/queries'
 
 const routes = [
@@ -55,7 +67,16 @@ const outcomeOptions = [
   ['technical-learning', 'Technical learning'],
 ]
 
+function toList(value: string) {
+  return value
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean)
+}
+
 function Shell() {
+  const currentUser = useCurrentUser()
+
   return (
     <main className="min-h-screen bg-[#f5f0e6] text-[#211b16]">
       <div className="app-texture min-h-screen">
@@ -96,6 +117,16 @@ function Shell() {
                 )
               })}
             </nav>
+            <div className="mt-5 rounded-md border border-[#d8cbb8] bg-white/60 p-3 text-sm">
+              <p className="font-semibold text-[#211b16]">
+                {currentUser.data?.displayName ?? 'No active reader'}
+              </p>
+              <p className="mt-1 text-xs text-[#62584a]">
+                {currentUser.isLoading
+                  ? 'Checking saved session'
+                  : currentUser.data?.email ?? 'Login or onboard to hydrate'}
+              </p>
+            </div>
           </aside>
 
           <section className="px-5 py-6 sm:px-8">
@@ -223,6 +254,13 @@ function TableStatus({ children }: { children: ReactNode }) {
 
 function Onboarding() {
   const createReadingIdentity = useCreateReadingIdentity()
+  const createMyReadingProfile = useCreateMyReadingProfile()
+  const updateReadingProfile = useUpdateMyReadingProfile()
+  const createReadingEvent = useCreateReadingEvent()
+  const createDnfRecord = useCreateDnfRecord()
+  const currentUser = useCurrentUser()
+  const profileQuery = useMyReadingProfile()
+  const booksQuery = useBooks({ limit: 25 })
   const [displayName, setDisplayName] = useState('Demo Reader')
   const [email, setEmail] = useState('reader@bookcompass.local')
   const [password, setPassword] = useState('bookcompass-demo')
@@ -230,14 +268,74 @@ function Onboarding() {
   const [favoriteGenres, setFavoriteGenres] = useState(
     'Productivity, Self-improvement',
   )
+  const [dislikedGenres, setDislikedGenres] = useState('Dense theory')
   const [preferredFormat, setPreferredFormat] = useState('ebook')
   const [dailyReadingMinutes, setDailyReadingMinutes] = useState(30)
+  const [estimatedWordsPerMinute, setEstimatedWordsPerMinute] = useState(250)
   const [preferredDepth, setPreferredDepth] = useState('balanced')
   const [pacingTolerance, setPacingTolerance] = useState('moderate')
   const [difficultyTolerance, setDifficultyTolerance] = useState('moderate')
+  const [signalBookId, setSignalBookId] = useState('')
+  const [readingSignal, setReadingSignal] = useState('liked')
+  const [dnfReason, setDnfReason] = useState('too-slow')
+  const [dnfPercent, setDnfPercent] = useState(25)
+
+  useEffect(() => {
+    if (currentUser.data) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setDisplayName(currentUser.data.displayName)
+      setEmail(currentUser.data.email)
+    }
+  }, [currentUser.data])
+
+  useEffect(() => {
+    if (!profileQuery.data) {
+      return
+    }
+
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setFavoriteGenres(profileQuery.data.favoriteGenres?.join(', ') ?? '')
+    setDislikedGenres(profileQuery.data.dislikedGenres?.join(', ') ?? '')
+    setTargetOutcome(profileQuery.data.targetOutcomes?.[0] ?? 'productivity')
+    setPreferredFormat(profileQuery.data.preferredFormats?.[0] ?? 'ebook')
+    setDailyReadingMinutes(profileQuery.data.dailyReadingMinutes ?? 30)
+    setEstimatedWordsPerMinute(profileQuery.data.estimatedWordsPerMinute ?? 250)
+    setPreferredDepth(profileQuery.data.preferredDepth ?? 'balanced')
+    setPacingTolerance(profileQuery.data.pacingTolerance ?? 'moderate')
+    setDifficultyTolerance(profileQuery.data.difficultyTolerance ?? 'moderate')
+  }, [profileQuery.data])
+
+  useEffect(() => {
+    if (!signalBookId && booksQuery.data?.items[0]?._id) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setSignalBookId(booksQuery.data.items[0]._id)
+    }
+  }, [booksQuery.data?.items, signalBookId])
+
+  const profilePayload = {
+    dailyReadingMinutes,
+    difficultyTolerance,
+    dislikedGenres: toList(dislikedGenres),
+    estimatedWordsPerMinute,
+    favoriteGenres: toList(favoriteGenres),
+    pacingTolerance,
+    preferredDepth,
+    preferredFormats: [preferredFormat],
+    targetOutcomes: [targetOutcome],
+  }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+
+    if (currentUser.data && profileQuery.data) {
+      updateReadingProfile.mutate(profilePayload)
+      return
+    }
+
+    if (currentUser.data) {
+      createMyReadingProfile.mutate(profilePayload)
+      return
+    }
 
     createReadingIdentity.mutate({
       user: {
@@ -245,20 +343,35 @@ function Onboarding() {
         email,
         password,
       },
-      profile: {
-        dailyReadingMinutes,
-        difficultyTolerance,
-        favoriteGenres: favoriteGenres
-          .split(',')
-          .map((genre) => genre.trim())
-          .filter(Boolean),
-        pacingTolerance,
-        preferredDepth,
-        preferredFormats: [preferredFormat],
-        targetOutcomes: [targetOutcome],
-      },
+      profile: profilePayload,
     })
   }
+
+  function handleReadingSignal(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    createReadingEvent.mutate({
+      bookId: signalBookId,
+      eventType: readingSignal as 'liked' | 'disliked' | 'completed' | 'saved',
+      progressPercent: readingSignal === 'completed' ? 100 : undefined,
+    })
+  }
+
+  function handleDnfSignal(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    createDnfRecord.mutate({
+      bookId: signalBookId,
+      difficultySnapshot: difficultyTolerance,
+      pacingSnapshot: pacingTolerance,
+      reason: dnfReason as 'too-slow',
+      stoppedAtPercent: dnfPercent,
+    })
+  }
+
+  const isUpdatingExistingProfile = Boolean(currentUser.data && profileQuery.data)
+  const isSavingProfile =
+    createReadingIdentity.isPending ||
+    createMyReadingProfile.isPending ||
+    updateReadingProfile.isPending
 
   return (
     <div className="space-y-6">
@@ -297,6 +410,11 @@ function Onboarding() {
               onChange={setFavoriteGenres}
               value={favoriteGenres}
             />
+            <TextField
+              label="Disliked genres"
+              onChange={setDislikedGenres}
+              value={dislikedGenres}
+            />
             <SelectField
               label="Preferred format"
               onChange={setPreferredFormat}
@@ -319,6 +437,19 @@ function Onboarding() {
                 }
                 type="number"
                 value={dailyReadingMinutes}
+              />
+            </label>
+            <label className="grid gap-2 text-sm font-semibold">
+              Estimated words per minute
+              <input
+                className="h-11 rounded-md border border-[#cfc0aa] bg-white px-3 text-sm outline-none focus:border-[#315d48]"
+                max={1000}
+                min={50}
+                onChange={(event) =>
+                  setEstimatedWordsPerMinute(Number(event.target.value))
+                }
+                type="number"
+                value={estimatedWordsPerMinute}
               />
             </label>
             <SelectField
@@ -354,16 +485,30 @@ function Onboarding() {
           </div>
           <button
             className="mt-5 inline-flex h-11 items-center gap-2 rounded-md bg-[#2f5d46] px-4 text-sm font-semibold text-[#fffaf0] disabled:cursor-not-allowed disabled:opacity-60"
-            disabled={createReadingIdentity.isPending}
+            disabled={isSavingProfile}
             type="submit"
           >
             <UserRound size={17} />
-            {createReadingIdentity.isPending ? 'Saving profile' : 'Save reader'}
+            {isSavingProfile
+              ? 'Saving profile'
+              : isUpdatingExistingProfile
+                ? 'Update profile'
+                : 'Save reader'}
           </button>
           {createReadingIdentity.isSuccess ? (
             <StatusMessage tone="success">
               Saved {createReadingIdentity.data.user.displayName} with a reading
               profile tied to the current authenticated session.
+            </StatusMessage>
+          ) : null}
+          {updateReadingProfile.isSuccess ? (
+            <StatusMessage tone="success">
+              Updated reading preferences for the current session.
+            </StatusMessage>
+          ) : null}
+          {createMyReadingProfile.isSuccess ? (
+            <StatusMessage tone="success">
+              Created a reading profile for the current session.
             </StatusMessage>
           ) : null}
           {createReadingIdentity.isError ? (
@@ -372,15 +517,109 @@ function Onboarding() {
               a unique email.
             </StatusMessage>
           ) : null}
+          {updateReadingProfile.isError ? (
+            <StatusMessage tone="error">
+              Could not update the reading profile for this session.
+            </StatusMessage>
+          ) : null}
+          {createMyReadingProfile.isError ? (
+            <StatusMessage tone="error">
+              Could not create a reading profile for this session.
+            </StatusMessage>
+          ) : null}
         </form>
 
         <div className="rounded-md border border-[#d4c3aa] bg-[#efe3cf] p-5">
           <Gauge className="text-[#315d48]" size={22} />
-          <h2 className="mt-4 text-xl font-semibold">Day 4 data flow</h2>
+          <h2 className="mt-4 text-xl font-semibold">Session hydration</h2>
           <p className="mt-2 text-sm leading-6 text-[#5c4f40]">
-            This form signs up a reader, stores the local access token, then
-            creates the reading profile from the authenticated request.
+            {currentUser.data
+              ? `${currentUser.data.displayName} is loaded from GET /auth/me.`
+              : 'No stored session is active. Saving will sign up a reader first.'}
           </p>
+          <p className="mt-3 text-sm leading-6 text-[#5c4f40]">
+            {profileQuery.data
+              ? 'Profile updates now write through PATCH /profiles/me.'
+              : 'Create a profile before sending behavior signals.'}
+          </p>
+        </div>
+      </section>
+
+      <section className="rounded-md border border-[#d8cbb8] bg-[#fffaf0] p-5">
+        <h2 className="text-xl font-semibold">Reading behavior signals</h2>
+        <div className="mt-4 grid gap-4 lg:grid-cols-2">
+          <form className="grid gap-4" onSubmit={handleReadingSignal}>
+            <SelectField
+              label="Book"
+              onChange={setSignalBookId}
+              options={
+                booksQuery.data?.items.map((book) => [book._id, book.title]) ?? []
+              }
+              value={signalBookId}
+            />
+            <SelectField
+              label="Signal"
+              onChange={setReadingSignal}
+              options={[
+                ['liked', 'Liked'],
+                ['disliked', 'Disliked'],
+                ['completed', 'Completed'],
+                ['saved', 'Saved'],
+              ]}
+              value={readingSignal}
+            />
+            <button
+              className="inline-flex h-11 w-fit items-center gap-2 rounded-md bg-[#2f5d46] px-4 text-sm font-semibold text-[#fffaf0] disabled:cursor-not-allowed disabled:opacity-60"
+              disabled={!signalBookId || createReadingEvent.isPending}
+              type="submit"
+            >
+              <BookOpenCheck size={17} />
+              Save signal
+            </button>
+            {createReadingEvent.isSuccess ? (
+              <StatusMessage tone="success">Reading signal captured.</StatusMessage>
+            ) : null}
+          </form>
+
+          <form className="grid gap-4" onSubmit={handleDnfSignal}>
+            <SelectField
+              label="DNF reason"
+              onChange={setDnfReason}
+              options={[
+                ['too-slow', 'Too slow'],
+                ['too-difficult', 'Too difficult'],
+                ['not-relevant', 'Not relevant'],
+                ['wrong-mood', 'Wrong mood'],
+                ['poor-writing-style', 'Poor writing style'],
+                ['too-long', 'Too long'],
+                ['lost-interest', 'Lost interest'],
+                ['other', 'Other'],
+              ]}
+              value={dnfReason}
+            />
+            <label className="grid gap-2 text-sm font-semibold">
+              Stopped at percent
+              <input
+                className="h-11 rounded-md border border-[#cfc0aa] bg-white px-3 text-sm outline-none focus:border-[#315d48]"
+                max={100}
+                min={0}
+                onChange={(event) => setDnfPercent(Number(event.target.value))}
+                type="number"
+                value={dnfPercent}
+              />
+            </label>
+            <button
+              className="inline-flex h-11 w-fit items-center gap-2 rounded-md bg-[#7b3f2a] px-4 text-sm font-semibold text-[#fffaf0] disabled:cursor-not-allowed disabled:opacity-60"
+              disabled={!signalBookId || createDnfRecord.isPending}
+              type="submit"
+            >
+              <ListChecks size={17} />
+              Save DNF
+            </button>
+            {createDnfRecord.isSuccess ? (
+              <StatusMessage tone="success">DNF pattern captured.</StatusMessage>
+            ) : null}
+          </form>
         </div>
       </section>
     </div>
