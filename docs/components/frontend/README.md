@@ -103,6 +103,20 @@ Day 5 session boundary:
 - Axios attaches the stored bearer token to API calls.
 - This is an MVP session boundary, not final production session management.
 
+Day 6 reading identity flow:
+
+- The app shell hydrates the current reader from `GET /auth/me` when a stored bearer token exists.
+- `/onboarding` reads the current profile from `GET /profiles/me`.
+- `/onboarding` can create a profile for an authenticated reader without one or update an existing profile through `PATCH /profiles/me`.
+- The profile form now captures disliked genres and estimated reading speed in addition to outcomes, favorite genres, format, depth, pacing, difficulty, and daily minutes.
+- The same route can capture first behavior signals through `POST /reading-events` and `POST /dnf-records`.
+- Behavior capture currently writes signals but does not yet display the reader-owned event/DNF history.
+
+Browser metadata:
+
+- The browser tab favicon uses `public/bookcompass-icon.png`.
+- The document title is `BookCompass`.
+
 ## API Contracts Consumed
 
 - `GET /authors?limit=100`
@@ -110,7 +124,12 @@ Day 5 session boundary:
 - `GET /books?limit=20&outcome=&q=`
 - `POST /auth/signup`
 - `POST /auth/login`
+- `GET /auth/me`
 - `POST /profiles`
+- `GET /profiles/me`
+- `PATCH /profiles/me`
+- `POST /reading-events`
+- `POST /dnf-records`
 
 ## Documentation Rule
 

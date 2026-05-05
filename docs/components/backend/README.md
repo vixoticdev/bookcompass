@@ -17,7 +17,9 @@
 - Health endpoint exists at `/health`.
 - Domain modules now exist for auth, users, reading profiles, authors, books, reading events, DNF records, and recommendation sessions.
 - Day 5 auth ownership is documented in `docs/architecture/auth-ownership.md`: self-service user-owned writes derive `userId` from verified JWT claims.
+- Day 6 adds authenticated reader profile retrieval and update through `GET /profiles/me` and `PATCH /profiles/me`.
 - Initial catalog seed script exists at `npm run seed --workspace @bookcompass/api`.
+- The Day 6 manual catalog batch expands the repeatable seed to 25 authors and 27 books for local exploration.
 - Catalog enrichment plan is documented in `docs/architecture/catalog-enrichment.md`.
 
 ## Module Status
@@ -26,7 +28,7 @@
 src/
   auth/                 implemented: local signup/login, password hashing, JWT issuance, request user extraction
   users/                implemented: schema, DTO, service, minimal REST
-  profiles/             implemented: schema, DTO, service, minimal REST
+  profiles/             implemented: schema, DTO, authenticated current-reader read/update, minimal REST
   books/                implemented: schema, DTO, service, minimal REST
   authors/              implemented: schema, DTO, service, minimal REST
   reading-events/       implemented: schema, DTO, service, minimal REST
@@ -41,7 +43,7 @@ src/
 
 - `POST /auth/signup`, `POST /auth/login`, `GET /auth/me`
 - `POST /users`, `GET /users`
-- `POST /profiles`, `GET /profiles`
+- `POST /profiles`, `GET /profiles/me`, `PATCH /profiles/me`, `GET /profiles`
 - `POST /authors`, `GET /authors`
 - `POST /books`, `GET /books`
 - `POST /reading-events`, `GET /reading-events`
@@ -49,6 +51,13 @@ src/
 - `POST /recommendation-sessions`, `GET /recommendation-sessions`
 
 These endpoints are intentionally thin foundation write/read paths. Self-service write endpoints for profiles, reading events, DNF records, and recommendation sessions require a bearer token and derive ownership from the authenticated request. Catalog reads and current list endpoints remain open for local MVP exploration until role policy is added.
+
+Profile ownership:
+
+- `POST /profiles` derives `userId` from the bearer token.
+- `GET /profiles/me` returns only the authenticated reader profile.
+- `PATCH /profiles/me` updates only the authenticated reader profile and does not accept `userId`.
+- Missing current profiles return `404` so the frontend can create the first profile for an authenticated user.
 
 Catalog filters added on Day 3 and paginated on Day 4:
 
@@ -80,6 +89,7 @@ Catalog list response shape:
 
 - All write DTOs use `class-validator`.
 - Auth DTOs validate email and password length before hashing or credential checks.
+- Current profile updates use a dedicated DTO without ownership fields.
 - Mongo references use `IsMongoId`.
 - Shared domain constants from `@bookcompass/shared` validate outcomes, reading depth, event type, DNF reason, mood, energy, focus, book format, pacing, and difficulty.
 - Numeric fields have explicit bounds for minutes, percentages, page counts, and reading speed.
@@ -114,13 +124,17 @@ Catalog list response shape:
 
 ## Seed Data
 
-The initial seed script upserts a small nonfiction catalog for MVP recommendation exploration:
+The seed script upserts the current repeatable local exploration catalog.
+
+Original MVP nonfiction seeds:
 
 - James Clear / `Atomic Habits`
 - Cal Newport / `Deep Work`
 - Eric Ries / `The Lean Startup`
 - Daniel Kahneman / `Thinking, Fast and Slow`
 - Brene Brown / `Dare to Lead`
+
+Day 6 manual catalog expansion adds 22 more books across self-help, psychology, business, philosophy, biography, literary fiction, fantasy, science fiction, mystery, classics, mental health, and creativity. Local validation after seeding returned 25 authors and 27 books.
 
 ## Catalog Enrichment Direction
 

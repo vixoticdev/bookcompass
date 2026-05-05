@@ -1,12 +1,19 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  login,
   createReadingProfile,
+  createDnfRecord,
+  createReadingEvent,
+  getCurrentUser,
+  getMyReadingProfile,
+  login,
   listAuthors,
   listBooks,
   signup,
+  updateMyReadingProfile,
   type AuthInput,
   type CreateReadingProfileInput,
+  type DnfRecordInput,
+  type ReadingEventInput,
   type SignupInput,
 } from './api';
 
@@ -25,6 +32,8 @@ export function useBooks(params: Parameters<typeof listBooks>[0] = {}) {
 }
 
 export function useCreateReadingIdentity() {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: async (input: {
       user: SignupInput;
@@ -36,10 +45,27 @@ export function useCreateReadingIdentity() {
 
       return { user: auth.user, profile };
     },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
+      void queryClient.invalidateQueries({ queryKey: ['profiles', 'me'] });
+    },
+  });
+}
+
+export function useCreateMyReadingProfile() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: createReadingProfile,
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['profiles', 'me'] });
+    },
   });
 }
 
 export function useLogin() {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: async (input: AuthInput) => {
       const auth = await login(input);
@@ -47,5 +73,54 @@ export function useLogin() {
 
       return auth;
     },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
+      void queryClient.invalidateQueries({ queryKey: ['profiles', 'me'] });
+    },
+  });
+}
+
+export function useCurrentUser() {
+  return useQuery({
+    queryKey: ['auth', 'me'],
+    queryFn: getCurrentUser,
+    enabled:
+      typeof window !== 'undefined' &&
+      Boolean(window.localStorage.getItem('bookcompass.accessToken')),
+    retry: false,
+  });
+}
+
+export function useMyReadingProfile() {
+  return useQuery({
+    queryKey: ['profiles', 'me'],
+    queryFn: getMyReadingProfile,
+    enabled:
+      typeof window !== 'undefined' &&
+      Boolean(window.localStorage.getItem('bookcompass.accessToken')),
+    retry: false,
+  });
+}
+
+export function useUpdateMyReadingProfile() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: updateMyReadingProfile,
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['profiles', 'me'] });
+    },
+  });
+}
+
+export function useCreateReadingEvent() {
+  return useMutation({
+    mutationFn: (input: ReadingEventInput) => createReadingEvent(input),
+  });
+}
+
+export function useCreateDnfRecord() {
+  return useMutation({
+    mutationFn: (input: DnfRecordInput) => createDnfRecord(input),
   });
 }
