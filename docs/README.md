@@ -25,6 +25,19 @@ For every release:
 2. Update any component doc touched by the release.
 3. Add an architecture decision note if the release changes repo structure, data model, scoring strategy, deployment, security, or infrastructure.
 
+## Commit Rule
+
+Future multi-part sessions should use multiple semantic commits instead of one broad day-level commit. Commit by coherent task or feature, for example:
+
+- design docs
+- access policy
+- frontend route flow
+- catalog enrichment
+- tests
+- runbook or release documentation
+
+Each semantic commit should leave the repo in a reasonable state and include focused validation where practical.
+
 ## MVP Design Rule
 
 Before changing product behavior, backend contracts, frontend route boundaries, catalog policy, recommendation logic, or admin access, read the MVP HLD and LLD:
