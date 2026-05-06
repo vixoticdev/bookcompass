@@ -2,7 +2,14 @@
 
 This is the canonical handoff file for BookCompass.
 
-Every Codex/chat instance working on this project must read this file before making changes. The user may point new chat instances to this file so they can quickly understand the product, current status, timeline, and update rules.
+Every chat instance working on this project must read this file before making changes. The user may point new chat instances to this file so they can quickly understand the product, current status, timeline, and update rules.
+
+Future implementation sessions must also read and follow the MVP HLD and LLD before changing product behavior, backend contracts, frontend route boundaries, catalog policy, recommendation logic, or admin access:
+
+- `docs/architecture/mvp-high-level-design.md`
+- `docs/architecture/mvp-low-level-design.md`
+
+If a future change needs to diverge from those designs, update the relevant HLD/LLD section in the same change and document the reason in the release note.
 
 ## Mandatory Update Rule
 
