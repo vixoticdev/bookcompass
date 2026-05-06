@@ -5,6 +5,8 @@ import {
   createReadingEvent,
   getCurrentUser,
   getMyReadingProfile,
+  listMyDnfRecords,
+  listMyReadingEvents,
   login,
   listAuthors,
   listBooks,
@@ -114,13 +116,45 @@ export function useUpdateMyReadingProfile() {
 }
 
 export function useCreateReadingEvent() {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: (input: ReadingEventInput) => createReadingEvent(input),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['reading-events', 'me'] });
+    },
   });
 }
 
 export function useCreateDnfRecord() {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: (input: DnfRecordInput) => createDnfRecord(input),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['dnf-records', 'me'] });
+    },
+  });
+}
+
+export function useMyReadingEvents() {
+  return useQuery({
+    queryKey: ['reading-events', 'me'],
+    queryFn: listMyReadingEvents,
+    enabled:
+      typeof window !== 'undefined' &&
+      Boolean(window.localStorage.getItem('bookcompass.accessToken')),
+    retry: false,
+  });
+}
+
+export function useMyDnfRecords() {
+  return useQuery({
+    queryKey: ['dnf-records', 'me'],
+    queryFn: listMyDnfRecords,
+    enabled:
+      typeof window !== 'undefined' &&
+      Boolean(window.localStorage.getItem('bookcompass.accessToken')),
+    retry: false,
   });
 }

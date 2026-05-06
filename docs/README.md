@@ -9,6 +9,8 @@ Start here for every new chat/session:
 ## Documentation Map
 
 - `architecture/`: decisions that shape the system.
+  - `mvp-high-level-design.md`: MVP system HLD.
+  - `mvp-low-level-design.md`: MVP API/data/route LLD.
 - `components/`: frontend, backend, recommendation engine, and admin documentation.
 - `releases/`: release notes and day-by-day project logs.
 - `roadmap/`: month-one build plan and phase split.

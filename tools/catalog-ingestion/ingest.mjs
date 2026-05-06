@@ -1,5 +1,8 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 import { dirname, resolve } from 'node:path';
+
+await loadLocalEnv();
 
 const USER_AGENT =
   process.env.CATALOG_USER_AGENT ??
@@ -11,6 +14,10 @@ const GOOGLE_BOOKS_BASE_URL = 'https://www.googleapis.com';
 const args = parseArgs(process.argv.slice(2));
 const sourcesPath = resolve(args.sources ?? 'tools/catalog-ingestion/sources.json');
 const outPath = resolve(args.out ?? '.local/catalog-drafts.jsonl');
+const cacheDir = args['cache-dir']
+  ? resolve(args['cache-dir'])
+  : resolve('.local/catalog-cache');
+const useCache = args.cache !== 'false';
 const targetTotal = Number(args.target ?? 1000);
 const perGenreOverride = args['per-genre'] ? Number(args['per-genre']) : undefined;
 const delayMs = Number(args.delay ?? 350);
@@ -157,6 +164,18 @@ async function fetchGoogleBooksVolume(candidate) {
 }
 
 async function fetchJson(url) {
+  const cachePath = resolve(cacheDir, `${cacheKeyForUrl(url)}.json`);
+
+  if (useCache) {
+    try {
+      return JSON.parse(await readFile(cachePath, 'utf8'));
+    } catch (error) {
+      if (error.code !== 'ENOENT') {
+        console.warn(`Ignoring unreadable cache entry ${cachePath}: ${error.message}`);
+      }
+    }
+  }
+
   const response = await fetch(url, {
     headers: {
       Accept: 'application/json',
@@ -165,10 +184,36 @@ async function fetchJson(url) {
   });
 
   if (!response.ok) {
-    throw new Error(`${response.status} ${response.statusText}: ${url.toString()}`);
+    throw new Error(
+      `${response.status} ${response.statusText}: ${redactUrl(url)}`,
+    );
   }
 
-  return response.json();
+  const data = await response.json();
+
+  if (useCache) {
+    await mkdir(dirname(cachePath), { recursive: true });
+    await writeFile(cachePath, `${JSON.stringify(data)}\n`);
+  }
+
+  return data;
+}
+
+function cacheKeyForUrl(url) {
+  const normalizedUrl = new URL(url.toString());
+  normalizedUrl.searchParams.delete('key');
+
+  return createHash('sha256').update(normalizedUrl.toString()).digest('hex');
+}
+
+function redactUrl(url) {
+  const redactedUrl = new URL(url.toString());
+
+  if (redactedUrl.searchParams.has('key')) {
+    redactedUrl.searchParams.set('key', 'redacted');
+  }
+
+  return redactedUrl.toString();
 }
 
 function normalizeDraft({ candidate, genre, googleVolume }) {
@@ -393,6 +438,46 @@ function parseArgs(values) {
   }
 
   return parsed;
+}
+
+async function loadLocalEnv() {
+  const envPaths = [resolve('.env.local'), resolve('.env')];
+
+  for (const envPath of envPaths) {
+    let text;
+
+    try {
+      text = await readFile(envPath, 'utf8');
+    } catch (error) {
+      if (error.code !== 'ENOENT') {
+        console.warn(`Ignoring unreadable env file ${envPath}: ${error.message}`);
+      }
+      continue;
+    }
+
+    for (const line of text.split('\n')) {
+      const trimmed = line.trim();
+
+      if (!trimmed || trimmed.startsWith('#')) {
+        continue;
+      }
+
+      const separatorIndex = trimmed.indexOf('=');
+
+      if (separatorIndex === -1) {
+        continue;
+      }
+
+      const key = trimmed.slice(0, separatorIndex).trim();
+      const rawValue = trimmed.slice(separatorIndex + 1).trim();
+
+      if (!key || process.env[key] !== undefined) {
+        continue;
+      }
+
+      process.env[key] = rawValue.replace(/^['"]|['"]$/g, '');
+    }
+  }
 }
 
 main().catch((error) => {

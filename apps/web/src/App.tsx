@@ -28,13 +28,17 @@ import {
   useCreateReadingIdentity,
   useCurrentUser,
   useLogin,
+  useMyDnfRecords,
+  useMyReadingEvents,
   useMyReadingProfile,
   useUpdateMyReadingProfile,
 } from './lib/queries'
 
 const routes = [
   { to: '/login', label: 'Login', icon: UserRound },
-  { to: '/onboarding', label: 'Onboarding', icon: UserRound },
+  { to: '/onboarding/signup', label: 'Signup', icon: UserRound },
+  { to: '/onboarding/preferences', label: 'Profile', icon: Gauge },
+  { to: '/onboarding/signals', label: 'Signals', icon: BookOpenCheck },
   { to: '/library', label: 'Library', icon: LibraryBig },
   { to: '/recommendations/new', label: 'Recommend', icon: Compass },
   { to: '/recommendations/history', label: 'History', icon: ListChecks },
@@ -131,9 +135,18 @@ function Shell() {
 
           <section className="px-5 py-6 sm:px-8">
             <Routes>
-              <Route element={<Navigate replace to="/onboarding" />} path="/" />
+              <Route element={<Navigate replace to="/onboarding/signup" />} path="/" />
               <Route element={<Login />} path="/login" />
-              <Route element={<Onboarding />} path="/onboarding" />
+              <Route
+                element={<Navigate replace to="/onboarding/signup" />}
+                path="/onboarding"
+              />
+              <Route element={<OnboardingSignup />} path="/onboarding/signup" />
+              <Route
+                element={<ProfilePreferences />}
+                path="/onboarding/preferences"
+              />
+              <Route element={<BehaviorCapture />} path="/onboarding/signals" />
               <Route element={<Library />} path="/library" />
               <Route element={<RecommendationStart />} path="/recommendations/new" />
               <Route
@@ -252,18 +265,101 @@ function TableStatus({ children }: { children: ReactNode }) {
   )
 }
 
-function Onboarding() {
+function OnboardingSignup() {
   const createReadingIdentity = useCreateReadingIdentity()
-  const createMyReadingProfile = useCreateMyReadingProfile()
-  const updateReadingProfile = useUpdateMyReadingProfile()
-  const createReadingEvent = useCreateReadingEvent()
-  const createDnfRecord = useCreateDnfRecord()
   const currentUser = useCurrentUser()
-  const profileQuery = useMyReadingProfile()
-  const booksQuery = useBooks({ limit: 25 })
   const [displayName, setDisplayName] = useState('Demo Reader')
   const [email, setEmail] = useState('reader@bookcompass.local')
   const [password, setPassword] = useState('bookcompass-demo')
+
+  useEffect(() => {
+    if (currentUser.data) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setDisplayName(currentUser.data.displayName)
+      setEmail(currentUser.data.email)
+    }
+  }, [currentUser.data])
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+
+    createReadingIdentity.mutate({
+      user: { displayName, email, password },
+      profile: {},
+    })
+  }
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        description="Start the authenticated reader identity. Preferences and behavior signals are separate steps so each contract stays focused."
+        eyebrow="Reader identity"
+        title="Create the reader account"
+      />
+
+      <section className="grid gap-4 lg:grid-cols-[1fr_320px]">
+        <form
+          className="rounded-md border border-[#d8cbb8] bg-[#fffaf0] p-5"
+          onSubmit={handleSubmit}
+        >
+          <div className="grid gap-4 sm:grid-cols-2">
+            <TextField
+              label="Display name"
+              onChange={setDisplayName}
+              value={displayName}
+            />
+            <TextField label="Email" onChange={setEmail} value={email} />
+            <TextField
+              label="Password"
+              onChange={setPassword}
+              type="password"
+              value={password}
+            />
+          </div>
+          <button
+            className="mt-5 inline-flex h-11 items-center gap-2 rounded-md bg-[#2f5d46] px-4 text-sm font-semibold text-[#fffaf0] disabled:cursor-not-allowed disabled:opacity-60"
+            disabled={createReadingIdentity.isPending || Boolean(currentUser.data)}
+            type="submit"
+          >
+            <UserRound size={17} />
+            {currentUser.data
+              ? 'Session active'
+              : createReadingIdentity.isPending
+                ? 'Saving reader'
+                : 'Create reader'}
+          </button>
+          {createReadingIdentity.isSuccess ? (
+            <StatusMessage tone="success">
+              Saved {createReadingIdentity.data.user.displayName}. Continue to
+              profile preferences.
+            </StatusMessage>
+          ) : null}
+          {createReadingIdentity.isError ? (
+            <StatusMessage tone="error">
+              Could not create the reader. Try a unique email or use login.
+            </StatusMessage>
+          ) : null}
+        </form>
+
+        <div className="rounded-md border border-[#d4c3aa] bg-[#efe3cf] p-5">
+          <Gauge className="text-[#315d48]" size={22} />
+          <h2 className="mt-4 text-xl font-semibold">Session state</h2>
+          <p className="mt-2 text-sm leading-6 text-[#5c4f40]">
+            {currentUser.data
+              ? `${currentUser.data.displayName} is loaded from GET /auth/me.`
+              : 'Creating a reader stores the JWT locally for the next steps.'}
+          </p>
+        </div>
+      </section>
+    </div>
+  )
+}
+
+function ProfilePreferences() {
+  const createMyReadingProfile = useCreateMyReadingProfile()
+  const updateReadingProfile = useUpdateMyReadingProfile()
+  const currentUser = useCurrentUser()
+  const profileQuery = useMyReadingProfile()
   const [targetOutcome, setTargetOutcome] = useState('productivity')
   const [favoriteGenres, setFavoriteGenres] = useState(
     'Productivity, Self-improvement',
@@ -275,18 +371,6 @@ function Onboarding() {
   const [preferredDepth, setPreferredDepth] = useState('balanced')
   const [pacingTolerance, setPacingTolerance] = useState('moderate')
   const [difficultyTolerance, setDifficultyTolerance] = useState('moderate')
-  const [signalBookId, setSignalBookId] = useState('')
-  const [readingSignal, setReadingSignal] = useState('liked')
-  const [dnfReason, setDnfReason] = useState('too-slow')
-  const [dnfPercent, setDnfPercent] = useState(25)
-
-  useEffect(() => {
-    if (currentUser.data) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setDisplayName(currentUser.data.displayName)
-      setEmail(currentUser.data.email)
-    }
-  }, [currentUser.data])
 
   useEffect(() => {
     if (!profileQuery.data) {
@@ -304,13 +388,6 @@ function Onboarding() {
     setPacingTolerance(profileQuery.data.pacingTolerance ?? 'moderate')
     setDifficultyTolerance(profileQuery.data.difficultyTolerance ?? 'moderate')
   }, [profileQuery.data])
-
-  useEffect(() => {
-    if (!signalBookId && booksQuery.data?.items[0]?._id) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setSignalBookId(booksQuery.data.items[0]._id)
-    }
-  }, [booksQuery.data?.items, signalBookId])
 
   const profilePayload = {
     dailyReadingMinutes,
@@ -336,40 +413,10 @@ function Onboarding() {
       createMyReadingProfile.mutate(profilePayload)
       return
     }
-
-    createReadingIdentity.mutate({
-      user: {
-        displayName,
-        email,
-        password,
-      },
-      profile: profilePayload,
-    })
-  }
-
-  function handleReadingSignal(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    createReadingEvent.mutate({
-      bookId: signalBookId,
-      eventType: readingSignal as 'liked' | 'disliked' | 'completed' | 'saved',
-      progressPercent: readingSignal === 'completed' ? 100 : undefined,
-    })
-  }
-
-  function handleDnfSignal(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    createDnfRecord.mutate({
-      bookId: signalBookId,
-      difficultySnapshot: difficultyTolerance,
-      pacingSnapshot: pacingTolerance,
-      reason: dnfReason as 'too-slow',
-      stoppedAtPercent: dnfPercent,
-    })
   }
 
   const isUpdatingExistingProfile = Boolean(currentUser.data && profileQuery.data)
   const isSavingProfile =
-    createReadingIdentity.isPending ||
     createMyReadingProfile.isPending ||
     updateReadingProfile.isPending
 
@@ -378,7 +425,7 @@ function Onboarding() {
       <PageHeader
         description="Capture the reader identity the engine will use later: goals, taste, format preferences, reading depth, and time constraints."
         eyebrow="Reader identity"
-        title="Build a profile before scoring starts"
+        title="Shape the reading profile"
       />
 
       <section className="grid gap-4 lg:grid-cols-[1fr_320px]">
@@ -387,18 +434,6 @@ function Onboarding() {
           onSubmit={handleSubmit}
         >
           <div className="grid gap-4 sm:grid-cols-2">
-            <TextField
-              label="Display name"
-              onChange={setDisplayName}
-              value={displayName}
-            />
-            <TextField label="Email" onChange={setEmail} value={email} />
-            <TextField
-              label="Password"
-              onChange={setPassword}
-              type="password"
-              value={password}
-            />
             <SelectField
               label="Target outcome"
               onChange={setTargetOutcome}
@@ -493,14 +528,8 @@ function Onboarding() {
               ? 'Saving profile'
               : isUpdatingExistingProfile
                 ? 'Update profile'
-                : 'Save reader'}
+                : 'Save profile'}
           </button>
-          {createReadingIdentity.isSuccess ? (
-            <StatusMessage tone="success">
-              Saved {createReadingIdentity.data.user.displayName} with a reading
-              profile tied to the current authenticated session.
-            </StatusMessage>
-          ) : null}
           {updateReadingProfile.isSuccess ? (
             <StatusMessage tone="success">
               Updated reading preferences for the current session.
@@ -509,12 +538,6 @@ function Onboarding() {
           {createMyReadingProfile.isSuccess ? (
             <StatusMessage tone="success">
               Created a reading profile for the current session.
-            </StatusMessage>
-          ) : null}
-          {createReadingIdentity.isError ? (
-            <StatusMessage tone="error">
-              Could not save the reader identity. Check the API response and try
-              a unique email.
             </StatusMessage>
           ) : null}
           {updateReadingProfile.isError ? (
@@ -535,7 +558,7 @@ function Onboarding() {
           <p className="mt-2 text-sm leading-6 text-[#5c4f40]">
             {currentUser.data
               ? `${currentUser.data.displayName} is loaded from GET /auth/me.`
-              : 'No stored session is active. Saving will sign up a reader first.'}
+              : 'Create or login to a reader before saving preferences.'}
           </p>
           <p className="mt-3 text-sm leading-6 text-[#5c4f40]">
             {profileQuery.data
@@ -545,9 +568,66 @@ function Onboarding() {
         </div>
       </section>
 
+    </div>
+  )
+}
+
+function BehaviorCapture() {
+  const createReadingEvent = useCreateReadingEvent()
+  const createDnfRecord = useCreateDnfRecord()
+  const readingEvents = useMyReadingEvents()
+  const dnfRecords = useMyDnfRecords()
+  const booksQuery = useBooks({ limit: 25 })
+  const [signalBookId, setSignalBookId] = useState('')
+  const [readingSignal, setReadingSignal] = useState('liked')
+  const [dnfReason, setDnfReason] = useState('too-slow')
+  const [dnfPercent, setDnfPercent] = useState(25)
+  const [pacingSnapshot, setPacingSnapshot] = useState('moderate')
+  const [difficultySnapshot, setDifficultySnapshot] = useState('moderate')
+
+  useEffect(() => {
+    if (!signalBookId && booksQuery.data?.items[0]?._id) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setSignalBookId(booksQuery.data.items[0]._id)
+    }
+  }, [booksQuery.data?.items, signalBookId])
+
+  const bookTitleById = useMemo(() => {
+    return new Map(
+      booksQuery.data?.items.map((book) => [book._id, book.title]) ?? [],
+    )
+  }, [booksQuery.data?.items])
+
+  function handleReadingSignal(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    createReadingEvent.mutate({
+      bookId: signalBookId,
+      eventType: readingSignal as 'liked' | 'disliked' | 'completed' | 'saved',
+      progressPercent: readingSignal === 'completed' ? 100 : undefined,
+    })
+  }
+
+  function handleDnfSignal(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    createDnfRecord.mutate({
+      bookId: signalBookId,
+      difficultySnapshot,
+      pacingSnapshot,
+      reason: dnfReason as 'too-slow',
+      stoppedAtPercent: dnfPercent,
+    })
+  }
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        description="Capture liked, disliked, completed, saved, and abandoned books as reader-owned behavior history."
+        eyebrow="Behavior history"
+        title="Turn reading actions into signals"
+      />
+
       <section className="rounded-md border border-[#d8cbb8] bg-[#fffaf0] p-5">
-        <h2 className="text-xl font-semibold">Reading behavior signals</h2>
-        <div className="mt-4 grid gap-4 lg:grid-cols-2">
+        <div className="grid gap-4 lg:grid-cols-2">
           <form className="grid gap-4" onSubmit={handleReadingSignal}>
             <SelectField
               label="Book"
@@ -597,17 +677,39 @@ function Onboarding() {
               ]}
               value={dnfReason}
             />
-            <label className="grid gap-2 text-sm font-semibold">
-              Stopped at percent
-              <input
-                className="h-11 rounded-md border border-[#cfc0aa] bg-white px-3 text-sm outline-none focus:border-[#315d48]"
-                max={100}
-                min={0}
-                onChange={(event) => setDnfPercent(Number(event.target.value))}
-                type="number"
-                value={dnfPercent}
+            <div className="grid gap-4 sm:grid-cols-3">
+              <SelectField
+                label="Pacing"
+                onChange={setPacingSnapshot}
+                options={[
+                  ['slow', 'Slow'],
+                  ['moderate', 'Moderate'],
+                  ['fast', 'Fast'],
+                ]}
+                value={pacingSnapshot}
               />
-            </label>
+              <SelectField
+                label="Difficulty"
+                onChange={setDifficultySnapshot}
+                options={[
+                  ['easy', 'Easy'],
+                  ['moderate', 'Moderate'],
+                  ['challenging', 'Challenging'],
+                ]}
+                value={difficultySnapshot}
+              />
+              <label className="grid gap-2 text-sm font-semibold">
+                Stopped at percent
+                <input
+                  className="h-11 rounded-md border border-[#cfc0aa] bg-white px-3 text-sm outline-none focus:border-[#315d48]"
+                  max={100}
+                  min={0}
+                  onChange={(event) => setDnfPercent(Number(event.target.value))}
+                  type="number"
+                  value={dnfPercent}
+                />
+              </label>
+            </div>
             <button
               className="inline-flex h-11 w-fit items-center gap-2 rounded-md bg-[#7b3f2a] px-4 text-sm font-semibold text-[#fffaf0] disabled:cursor-not-allowed disabled:opacity-60"
               disabled={!signalBookId || createDnfRecord.isPending}
@@ -622,6 +724,60 @@ function Onboarding() {
           </form>
         </div>
       </section>
+
+      <section className="grid gap-4 lg:grid-cols-2">
+        <BehaviorHistoryTable
+          emptyLabel="No reading events yet"
+          rows={
+            readingEvents.data?.map((event) => [
+              event.eventType,
+              bookTitleById.get(event.bookId) ?? event.bookId,
+              event.progressPercent ? `${event.progressPercent}%` : 'Signal',
+            ]) ?? []
+          }
+          title="Reading events"
+        />
+        <BehaviorHistoryTable
+          emptyLabel="No DNF records yet"
+          rows={
+            dnfRecords.data?.map((record) => [
+              record.reason,
+              bookTitleById.get(record.bookId) ?? record.bookId,
+              `${record.stoppedAtPercent}%`,
+            ]) ?? []
+          }
+          title="DNF records"
+        />
+      </section>
+    </div>
+  )
+}
+
+function BehaviorHistoryTable({
+  emptyLabel,
+  rows,
+  title,
+}: {
+  emptyLabel: string
+  rows: string[][]
+  title: string
+}) {
+  return (
+    <div className="overflow-hidden rounded-md border border-[#d8cbb8] bg-[#fffaf0]">
+      <div className="border-b border-[#e7dbc8] px-4 py-3 text-sm font-semibold">
+        {title}
+      </div>
+      {rows.length === 0 ? <TableStatus>{emptyLabel}</TableStatus> : null}
+      {rows.map(([signal, book, detail]) => (
+        <div
+          className="grid grid-cols-[0.7fr_1fr_0.5fr] gap-3 border-b border-[#eee4d6] px-4 py-4 text-sm last:border-b-0"
+          key={`${signal}-${book}-${detail}`}
+        >
+          <span className="font-semibold">{signal}</span>
+          <span>{book}</span>
+          <span>{detail}</span>
+        </div>
+      ))}
     </div>
   )
 }

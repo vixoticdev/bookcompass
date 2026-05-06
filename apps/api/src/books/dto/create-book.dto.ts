@@ -36,8 +36,25 @@ export class CreateBookDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(300)
+  subtitle?: string;
+
+  @IsOptional()
+  @IsString()
   @MaxLength(5000)
   description?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  @Max(3000)
+  publishedYear?: number;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(12)
+  language?: string;
 
   @IsOptional()
   @IsArray()
@@ -83,4 +100,14 @@ export class CreateBookDto {
   @Min(1)
   @Max(100000)
   estimatedMinutes?: number;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  googleBooksVolumeId?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(1000)
+  thumbnailUrl?: string;
 }

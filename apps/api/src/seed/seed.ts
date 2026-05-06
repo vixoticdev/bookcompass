@@ -24,6 +24,10 @@ const seedAuthors: SeedAuthor[] = [
     books: [
       {
         title: 'Atomic Habits',
+        publishedYear: 2023,
+        googleBooksVolumeId: 'WmqyDwAAQBAJ',
+        thumbnailUrl:
+          'http://books.google.com/books/content?id=WmqyDwAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api',
         description:
           'A practical system for building good habits, breaking bad ones, and making incremental progress visible.',
         genres: ['Self-improvement', 'Productivity'],
@@ -45,6 +49,11 @@ const seedAuthors: SeedAuthor[] = [
     books: [
       {
         title: 'Deep Work',
+        subtitle: 'Rules for Focused Success in a Distracted World',
+        publishedYear: 2016,
+        googleBooksVolumeId: 'lZpFCgAAQBAJ',
+        thumbnailUrl:
+          'http://books.google.com/books/content?id=lZpFCgAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api',
         description:
           'A framework for protecting attention and producing high-value work in distraction-heavy environments.',
         genres: ['Productivity', 'Business'],
@@ -66,6 +75,12 @@ const seedAuthors: SeedAuthor[] = [
     books: [
       {
         title: 'The Lean Startup',
+        subtitle:
+          "How Today's Entrepreneurs Use Continuous Innovation to Create Radically Successful Businesses",
+        publishedYear: 2011,
+        googleBooksVolumeId: 'tvfyz-4JILwC',
+        thumbnailUrl:
+          'http://books.google.com/books/content?id=tvfyz-4JILwC&printsec=frontcover&img=1&zoom=1&source=gbs_api',
         description:
           'A startup operating model built around experimentation, feedback loops, and validated learning.',
         genres: ['Startup', 'Business', 'Product'],
@@ -87,6 +102,10 @@ const seedAuthors: SeedAuthor[] = [
     books: [
       {
         title: 'Thinking, Fast and Slow',
+        publishedYear: 2011,
+        googleBooksVolumeId: 'oV1tXT3HigoC',
+        thumbnailUrl:
+          'http://books.google.com/books/content?id=oV1tXT3HigoC&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api',
         description:
           'A deep exploration of cognitive bias, judgment, and the two systems behind human decision-making.',
         genres: ['Psychology', 'Decision science'],
@@ -108,6 +127,8 @@ const seedAuthors: SeedAuthor[] = [
     books: [
       {
         title: 'Dare to Lead',
+        publishedYear: 2019,
+        googleBooksVolumeId: 'UG6RzQEACAAJ',
         description:
           'A leadership book about courage, trust, difficult conversations, and resilient team culture.',
         genres: ['Leadership', 'Personal growth'],
@@ -125,23 +146,19 @@ const seedAuthors: SeedAuthor[] = [
     name: 'Bianca Sparacino',
     bio: 'Writer focused on self-compassion, healing, emotional resilience, and reflective personal growth.',
     knownForGenres: ['Self-help', 'Personal growth', 'Mindfulness'],
-    outcomeStrengths: [
-      'emotional-resilience',
-      'habit-building',
-      'discipline',
-    ],
+    outcomeStrengths: ['emotional-resilience', 'habit-building', 'discipline'],
     books: [
       {
         title: 'A Gentle Reminder',
         isbn: '1949759296',
+        publishedYear: 2020,
+        googleBooksVolumeId: '-fvazQEACAAJ',
+        thumbnailUrl:
+          'http://books.google.com/books/content?id=-fvazQEACAAJ&printsec=frontcover&img=1&zoom=1&source=gbs_api',
         description:
           'A reflective collection for readers seeking self-compassion, emotional steadiness, and gentler inner dialogue.',
         genres: ['Self-help', 'Personal growth', 'Mindfulness'],
-        outcomeTags: [
-          'emotional-resilience',
-          'habit-building',
-          'discipline',
-        ],
+        outcomeTags: ['emotional-resilience', 'habit-building', 'discipline'],
         pacing: 'moderate',
         difficulty: 'easy',
         depth: 'balanced',
@@ -160,6 +177,11 @@ const seedAuthors: SeedAuthor[] = [
       {
         title: '12 Rules for Life',
         isbn: '9780735278516',
+        subtitle: 'An Antidote to Chaos',
+        publishedYear: 2019,
+        googleBooksVolumeId: 'bXfzvAEACAAJ',
+        thumbnailUrl:
+          'http://books.google.com/books/content?id=bXfzvAEACAAJ&printsec=frontcover&img=1&zoom=1&source=gbs_api',
         description:
           'A rule-based personal philosophy book about responsibility, order, discipline, and meaning.',
         genres: ['Self-help', 'Psychology', 'Philosophy'],
@@ -182,6 +204,8 @@ const seedAuthors: SeedAuthor[] = [
       {
         title: 'The Laws of Human Nature',
         isbn: '9780525561804',
+        publishedYear: 2018,
+        googleBooksVolumeId: 'vDDWvAEACAAJ',
         description:
           'A dense guide to motives, emotion, social behavior, empathy, and self-control.',
         genres: ['Psychology', 'Strategy', 'Personal growth'],
@@ -204,6 +228,10 @@ const seedAuthors: SeedAuthor[] = [
       {
         title: 'No Logo',
         isbn: '9056374524',
+        subtitle:
+          'geen ruimte, geen keuze, geen werk : de strijd tegen de dwang van de wereldmerken',
+        publishedYear: 2002,
+        googleBooksVolumeId: 'hGVbAQAACAAJ',
         description:
           'A critique of branding, corporate power, labor practices, and global consumer culture.',
         genres: ['Business', 'Politics', 'Culture'],
@@ -226,6 +254,10 @@ const seedAuthors: SeedAuthor[] = [
       {
         title: 'The Compound Effect',
         isbn: '159315724X',
+        publishedYear: 2012,
+        googleBooksVolumeId: 'g5pytAEACAAJ',
+        thumbnailUrl:
+          'http://books.google.com/books/content?id=g5pytAEACAAJ&printsec=frontcover&img=1&zoom=1&source=gbs_api',
         description:
           'A practical book about small consistent actions, habit loops, and long-term performance gains.',
         genres: ['Self-improvement', 'Productivity', 'Leadership'],
@@ -248,6 +280,11 @@ const seedAuthors: SeedAuthor[] = [
       {
         title: 'Good to Great',
         isbn: '9780066620992',
+        subtitle: "Why Some Companies Make the Leap...And Others Don't",
+        publishedYear: 2001,
+        googleBooksVolumeId: 'pJNt2ZFFT3sC',
+        thumbnailUrl:
+          'http://books.google.com/books/content?id=pJNt2ZFFT3sC&printsec=frontcover&img=1&zoom=1&source=gbs_api',
         description:
           'A research-backed management book about disciplined people, focused strategy, and durable company performance.',
         genres: ['Business', 'Leadership', 'Management'],
@@ -270,6 +307,8 @@ const seedAuthors: SeedAuthor[] = [
       {
         title: 'The Art of War',
         isbn: '9781494806569',
+        publishedYear: 2013,
+        googleBooksVolumeId: 'Op0UngEACAAJ',
         description:
           'A concise classical strategy text about conflict, positioning, timing, discipline, and leadership.',
         genres: ['Strategy', 'Classics', 'Philosophy'],
@@ -292,6 +331,8 @@ const seedAuthors: SeedAuthor[] = [
       {
         title: 'Beyond Good and Evil',
         isbn: '9781704936901',
+        publishedYear: 2019,
+        googleBooksVolumeId: 'QqDfzgEACAAJ',
         description:
           'A challenging philosophical work about morality, truth, values, power, and intellectual independence.',
         genres: ['Philosophy', 'Classics', 'Ethics'],
@@ -314,6 +355,10 @@ const seedAuthors: SeedAuthor[] = [
       {
         title: 'The Story of Philosophy',
         isbn: '1512110353',
+        subtitle:
+          'The Lives and Opinions Greatest Philosophers of the Western World (in Focus Biographies)',
+        publishedYear: 2015,
+        googleBooksVolumeId: 'QdPesgEACAAJ',
         description:
           'An accessible tour of major philosophers, their ideas, and the lives behind those ideas.',
         genres: ['Philosophy', 'History', 'Biography'],
@@ -380,6 +425,11 @@ const seedAuthors: SeedAuthor[] = [
       {
         title: 'Moonwalking with Einstein',
         isbn: '9781594202292',
+        subtitle: 'The Art and Science of Remembering Everything',
+        publishedYear: 2011,
+        googleBooksVolumeId: 'cCmGngEACAAJ',
+        thumbnailUrl:
+          'http://books.google.com/books/content?id=cCmGngEACAAJ&printsec=frontcover&img=1&zoom=1&source=gbs_api',
         description:
           'A narrative exploration of memory techniques, learning, competition, and cognitive performance.',
         genres: ['Psychology', 'Science', 'Memoir'],
@@ -396,12 +446,20 @@ const seedAuthors: SeedAuthor[] = [
   {
     name: 'Matt Haig',
     bio: 'Novelist and nonfiction author writing about mental health, regret, possibility, and resilience.',
-    knownForGenres: ['Literary fiction', 'Contemporary fiction', 'Mental health'],
+    knownForGenres: [
+      'Literary fiction',
+      'Contemporary fiction',
+      'Mental health',
+    ],
     outcomeStrengths: ['emotional-resilience'],
     books: [
       {
         title: 'The Midnight Library',
         isbn: '1786892731',
+        publishedYear: 2021,
+        googleBooksVolumeId: 'exTZzQEACAAJ',
+        thumbnailUrl:
+          'http://books.google.com/books/content?id=exTZzQEACAAJ&printsec=frontcover&img=1&zoom=1&source=gbs_api',
         description:
           'A reflective novel about regret, alternate lives, depression, possibility, and choosing to live.',
         genres: ['Literary fiction', 'Contemporary fiction'],
@@ -424,6 +482,10 @@ const seedAuthors: SeedAuthor[] = [
       {
         title: 'The Silmarillion',
         isbn: '0618126988',
+        publishedYear: 2001,
+        googleBooksVolumeId: 'zlB71nO7T5EC',
+        thumbnailUrl:
+          'http://books.google.com/books/content?id=zlB71nO7T5EC&printsec=frontcover&img=1&zoom=1&source=gbs_api',
         description:
           'A mythic fantasy history of Middle-earth, rich with creation stories, conflict, tragedy, and lore.',
         genres: ['Fantasy', 'Classics', 'Mythology'],
@@ -446,6 +508,10 @@ const seedAuthors: SeedAuthor[] = [
       {
         title: "Death's End",
         isbn: '9780765386632',
+        publishedYear: 2017,
+        googleBooksVolumeId: '1MEOMQAACAAJ',
+        thumbnailUrl:
+          'http://books.google.com/books/content?id=1MEOMQAACAAJ&printsec=frontcover&img=1&zoom=1&source=gbs_api',
         description:
           'A large-scale science fiction novel about civilization, physics, strategy, and long-horizon existential risk.',
         genres: ['Science fiction', 'Technology', 'Speculative fiction'],
@@ -468,6 +534,10 @@ const seedAuthors: SeedAuthor[] = [
       {
         title: 'Roadside Picnic',
         isbn: '9781473208735',
+        publishedYear: 2014,
+        googleBooksVolumeId: 'Dog5AwAAQBAJ',
+        thumbnailUrl:
+          'http://books.google.com/books/content?id=Dog5AwAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api',
         description:
           'A philosophical science fiction novel about alien remnants, risk, obsession, and human desire.',
         genres: ['Science fiction', 'Philosophy', 'Speculative fiction'],
@@ -562,6 +632,12 @@ const seedAuthors: SeedAuthor[] = [
       {
         title: 'Why Has Nobody Told Me This Before?',
         isbn: '0241529735',
+        subtitle:
+          'The Sunday Times bestseller, with over 1 million copies sold',
+        publishedYear: 2022,
+        googleBooksVolumeId: 'fxcjEAAAQBAJ',
+        thumbnailUrl:
+          'http://books.google.com/books/content?id=fxcjEAAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api',
         description:
           'A practical psychology guide to mood, motivation, anxiety, confidence, grief, and emotional regulation.',
         genres: ['Psychology', 'Mental health', 'Self-help'],

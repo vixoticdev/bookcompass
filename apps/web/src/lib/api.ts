@@ -21,6 +21,9 @@ export type Book = {
   title: string;
   authorId: string;
   description?: string;
+  subtitle?: string;
+  publishedYear?: number;
+  language?: string;
   genres: string[];
   outcomeTags: string[];
   pacing: string;
@@ -29,16 +32,18 @@ export type Book = {
   formats: string[];
   pageCount?: number;
   estimatedMinutes?: number;
+  googleBooksVolumeId?: string;
+  thumbnailUrl?: string;
 };
 
 export type CreateUserInput = {
   displayName: string;
   email: string;
-  role?: 'reader' | 'admin';
 };
 
 export type User = CreateUserInput & {
   _id: string;
+  role: 'reader' | 'admin';
 };
 
 export type AuthInput = {
@@ -80,6 +85,14 @@ export type ReadingEventInput = {
   note?: string;
 };
 
+export type ReadingEvent = ReadingEventInput & {
+  _id: string;
+  userId: string;
+  occurredAt: string;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
 export type DnfRecordInput = {
   bookId: string;
   stoppedAtPercent: number;
@@ -95,6 +108,13 @@ export type DnfRecordInput = {
   pacingSnapshot?: string;
   difficultySnapshot?: string;
   note?: string;
+};
+
+export type DnfRecord = DnfRecordInput & {
+  _id: string;
+  userId: string;
+  createdAt?: string;
+  updatedAt?: string;
 };
 
 export class ApiError extends Error {
@@ -226,7 +246,7 @@ export function updateMyReadingProfile(input: CreateReadingProfileInput) {
 
 export function createReadingEvent(input: ReadingEventInput) {
   return axiosInstance
-    .post('/reading-events', input)
+    .post<ReadingEvent>('/reading-events', input)
     .then((response) => response.data)
     .catch((error: unknown) => {
       throw toApiError(error);
@@ -235,7 +255,25 @@ export function createReadingEvent(input: ReadingEventInput) {
 
 export function createDnfRecord(input: DnfRecordInput) {
   return axiosInstance
-    .post('/dnf-records', input)
+    .post<DnfRecord>('/dnf-records', input)
+    .then((response) => response.data)
+    .catch((error: unknown) => {
+      throw toApiError(error);
+    });
+}
+
+export function listMyReadingEvents() {
+  return axiosInstance
+    .get<ReadingEvent[]>('/reading-events/me')
+    .then((response) => response.data)
+    .catch((error: unknown) => {
+      throw toApiError(error);
+    });
+}
+
+export function listMyDnfRecords() {
+  return axiosInstance
+    .get<DnfRecord[]>('/dnf-records/me')
     .then((response) => response.data)
     .catch((error: unknown) => {
       throw toApiError(error);

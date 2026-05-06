@@ -18,4 +18,8 @@ export class DnfService {
   findAll() {
     return this.dnfRecordModel.find().sort({ createdAt: -1 }).exec();
   }
+
+  findByUserId(userId: string) {
+    return this.dnfRecordModel.find({ userId }).sort({ createdAt: -1 }).exec();
+  }
 }
