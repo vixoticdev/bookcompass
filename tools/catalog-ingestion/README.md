@@ -44,6 +44,8 @@ Useful smaller run:
 node tools/catalog-ingestion/ingest.mjs --target 40 --per-genre 2 --out .local/catalog-smoke.jsonl
 ```
 
+Raw source responses are cached by normalized URL hash under `.local/catalog-cache` by default. Use `--cache-dir <path>` to choose another cache location or `--cache false` for an uncached smoke run. The script loads `.env.local` and `.env` automatically, and redacts API keys from failed request messages.
+
 ## API Notes
 
 Open Library:

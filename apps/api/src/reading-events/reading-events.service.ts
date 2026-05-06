@@ -18,4 +18,11 @@ export class ReadingEventsService {
   findAll() {
     return this.readingEventModel.find().sort({ occurredAt: -1 }).exec();
   }
+
+  findByUserId(userId: string) {
+    return this.readingEventModel
+      .find({ userId })
+      .sort({ occurredAt: -1 })
+      .exec();
+  }
 }

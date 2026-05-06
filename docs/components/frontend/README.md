@@ -58,6 +58,9 @@ The frontend owns:
 /login
 /signup
 /onboarding
+/onboarding/signup
+/onboarding/preferences
+/onboarding/signals
 /dashboard
 /recommendations/new
 /recommendations/history
@@ -88,6 +91,7 @@ State management:
 - `src/lib/axiosInstance.ts` owns the configured Axios instance and base URL.
 - `src/lib/api.ts` owns typed HTTP calls to the backend.
 - `src/lib/queries.ts` owns catalog and reader identity hooks.
+- Book API types include Day 7 enrichment fields for subtitle, publication year, language, Google Books volume ID, and thumbnail URL.
 
 Loading/error/empty states:
 
@@ -112,6 +116,13 @@ Day 6 reading identity flow:
 - The same route can capture first behavior signals through `POST /reading-events` and `POST /dnf-records`.
 - Behavior capture currently writes signals but does not yet display the reader-owned event/DNF history.
 
+Day 7 route split:
+
+- `/onboarding/signup` handles local reader account creation and JWT storage.
+- `/onboarding/preferences` handles reading profile create/update.
+- `/onboarding/signals` handles reading event and DNF capture.
+- `/onboarding/signals` reads `GET /reading-events/me` and `GET /dnf-records/me` to show the current reader's captured behavior history.
+
 Browser metadata:
 
 - The browser tab favicon uses `public/bookcompass-icon.png`.
@@ -129,7 +140,9 @@ Browser metadata:
 - `GET /profiles/me`
 - `PATCH /profiles/me`
 - `POST /reading-events`
+- `GET /reading-events/me`
 - `POST /dnf-records`
+- `GET /dnf-records/me`
 
 ## Documentation Rule
 

@@ -1,6 +1,5 @@
 import {
   IsEmail,
-  IsIn,
   IsOptional,
   IsString,
   MaxLength,
@@ -20,8 +19,4 @@ export class CreateUserDto {
   @IsString()
   @MaxLength(160)
   authProviderId?: string;
-
-  @IsOptional()
-  @IsIn(['reader', 'admin'])
-  role?: 'reader' | 'admin';
 }

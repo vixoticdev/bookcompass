@@ -27,7 +27,16 @@ export class Book {
   isbn?: string;
 
   @Prop({ trim: true })
+  subtitle?: string;
+
+  @Prop({ trim: true })
   description?: string;
+
+  @Prop({ min: 0 })
+  publishedYear?: number;
+
+  @Prop({ trim: true, default: 'en' })
+  language?: string;
 
   @Prop({ type: [String], default: [], index: true })
   genres: string[];
@@ -52,6 +61,12 @@ export class Book {
 
   @Prop({ min: 1 })
   estimatedMinutes?: number;
+
+  @Prop({ trim: true })
+  googleBooksVolumeId?: string;
+
+  @Prop({ trim: true })
+  thumbnailUrl?: string;
 }
 
 export const BookSchema = SchemaFactory.createForClass(Book);

@@ -10,7 +10,12 @@ export class UsersService {
     @InjectModel(User.name) private readonly userModel: Model<User>,
   ) {}
 
-  async create(createUserDto: CreateUserDto & { passwordHash?: string }) {
+  async create(
+    createUserDto: CreateUserDto & {
+      passwordHash?: string;
+      role?: 'reader' | 'admin';
+    },
+  ) {
     try {
       return await this.userModel.create(createUserDto);
     } catch (error: unknown) {

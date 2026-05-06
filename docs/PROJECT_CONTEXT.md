@@ -2,7 +2,14 @@
 
 This is the canonical handoff file for BookCompass.
 
-Every Codex/chat instance working on this project must read this file before making changes. The user may point new chat instances to this file so they can quickly understand the product, current status, timeline, and update rules.
+Every chat instance working on this project must read this file before making changes. The user may point new chat instances to this file so they can quickly understand the product, current status, timeline, and update rules.
+
+Future implementation sessions must also read and follow the MVP HLD and LLD before changing product behavior, backend contracts, frontend route boundaries, catalog policy, recommendation logic, or admin access:
+
+- `docs/architecture/mvp-high-level-design.md`
+- `docs/architecture/mvp-low-level-design.md`
+
+If a future change needs to diverge from those designs, update the relevant HLD/LLD section in the same change and document the reason in the release note.
 
 ## Mandatory Update Rule
 
@@ -163,7 +170,7 @@ Atlas note:
 
 ## Current Project State
 
-As of 2026-05-05:
+As of 2026-05-06:
 
 - Monorepo exists and is pushed to GitHub.
 - Frontend and backend can run locally.
@@ -180,6 +187,7 @@ As of 2026-05-05:
 - Backend catalog list endpoints now return paginated page objects with `items`, `total`, `limit`, and `offset`.
 - API seed script exists for authors/books: `npm run seed --workspace @bookcompass/api`.
 - API seed script now includes a manually reviewed Day 6 catalog expansion with 25 authors and 27 books total for local exploration.
+- API seed script now includes Day 7 Google Books enrichment for 20 of the 27 seeded books, with 14 thumbnail-backed records.
 - Frontend app shell routes exist for onboarding, library, recommendation start/history, and admin placeholders.
 - Frontend has an API client and React Query hooks for books, authors, and reader identity creation.
 - Frontend browser tab uses the BookCompass PNG icon at `apps/web/public/bookcompass-icon.png` and the page title is `BookCompass`.
@@ -189,19 +197,28 @@ As of 2026-05-05:
 - API CORS allows both `http://localhost:5173` and `http://127.0.0.1:5173` by default; override with comma-separated `WEB_ORIGINS`.
 - Frontend API calls use a dedicated Axios instance in `apps/web/src/lib/axiosInstance.ts`.
 - Backend exposes authenticated reader profile retrieval and update through `GET /profiles/me` and `PATCH /profiles/me`.
+- Backend now has reusable `@Roles(...)` metadata and `RolesGuard` for admin-only endpoints.
+- Catalog mutations and global user/profile/reading-event/DNF/recommendation-session list endpoints now require an admin JWT.
+- Public `POST /users` forces `role: reader`; clients cannot self-create admins through that legacy endpoint.
+- Backend exposes reader-owned behavior history through `GET /reading-events/me` and `GET /dnf-records/me`.
 - Frontend session state hydrates from `GET /auth/me` when a local bearer token exists.
 - `/onboarding` can now update an existing authenticated profile and capture first reading behavior signals for liked, disliked, completed, saved, and DNF patterns.
+- Frontend reading identity is split across `/onboarding/signup`, `/onboarding/preferences`, and `/onboarding/signals`.
+- `/onboarding/signals` now displays reader-owned reading event and DNF history.
 - Catalog enrichment plan is documented in `docs/architecture/catalog-enrichment.md`.
+- MVP HLD and LLD are documented in `docs/architecture/mvp-high-level-design.md` and `docs/architecture/mvp-low-level-design.md`.
 - Catalog ingestion scaffold exists in `tools/catalog-ingestion` for a 1,000-book mixed-genre draft catalog using Open Library discovery plus Google Books enrichment.
+- Catalog ingestion now loads `.env.local`, caches successful raw source responses under `.local/catalog-cache` by normalized URL hash, and redacts API keys from failed request messages.
+- A full Day 7 catalog draft ingestion wrote `.local/catalog-drafts.jsonl` with 1,000 review-gated drafts: 993 ISBNs, 843 Google Books volume IDs, 635 descriptions, 550 thumbnails, and zero recommendation-eligible records by design.
 - Catalog smoke ingestion was run for 40 mixed-genre drafts and wrote `.local/catalog-smoke.jsonl` for local inspection.
 - Google Books enrichment should use `GOOGLE_BOOKS_API_KEY` for real runs; unkeyed requests returned `429` during local smoke validation, while Open Library drafts still exported successfully.
 - Day 6 catalog smoke review found 40 drafts, 40 ISBNs, 29 Google Books volume IDs, 18 thumbnails, all marked `needs-review`, and zero recommendation-eligible records by design.
-- Local Docker MongoDB was seeded with the Day 6 manual catalog batch and verified through `GET /books` and `GET /authors`.
+- Local Docker MongoDB was seeded with the Day 7 enriched catalog batch and verified through `GET /books` and `GET /authors`.
 - Frontend visual direction is antique retro/parchment-inspired with modern SaaS usability.
-- Auth role policy and production identity provider integration are not implemented yet.
+- Production identity provider integration is not implemented yet.
 - Recommendation engine is documented; session storage exists, but scoring/candidate generation is not implemented yet.
 - Admin dashboard is documented but not implemented yet.
-- Admin role policy is still not implemented; avoid exposing admin mutations until guards are added.
+- Admin CRUD screens and tuning controls are not implemented yet.
 - CI/CD is not configured yet.
 
 Important uncommitted context:
@@ -472,6 +489,57 @@ Recommended Day 7 implementation target:
 - Add focused backend tests for `GET /profiles/me` and `PATCH /profiles/me`.
 - Add raw source response caching before running the full 1,000-book catalog draft ingestion.
 
+### Day 7: 2026-05-06
+
+Goal: document the MVP design, tighten access policy, expose reader-owned behavior history, split onboarding boundaries, and prepare catalog ingestion for larger cached runs.
+
+Completed:
+
+- Added MVP high-level and low-level design docs.
+- Confirmed the current monorepo/NestJS/MongoDB deterministic-engine architecture remains the right MVP design.
+- Added reusable `@Roles(...)` metadata and `RolesGuard`.
+- Protected author/book creation and global user/profile/reading-event/DNF/recommendation-session list endpoints behind admin JWT checks.
+- Forced public `POST /users` to create reader users only.
+- Added `GET /reading-events/me` for the authenticated reader timeline.
+- Added `GET /dnf-records/me` for authenticated reader DNF history.
+- Added frontend API helpers and React Query hooks for current-reader behavior history.
+- Split reading identity UI into:
+  - `/onboarding/signup`
+  - `/onboarding/preferences`
+  - `/onboarding/signals`
+- Added behavior history display on `/onboarding/signals`.
+- Added raw Open Library/Google Books response caching to the catalog ingestion script.
+- Added `.env.local` loading and API-key redaction to the catalog ingestion script.
+- Added book metadata fields for `subtitle`, `publishedYear`, `language`, `googleBooksVolumeId`, and `thumbnailUrl`.
+- Enriched 20 of the current 27 seeded catalog books with Google Books metadata and 14 with thumbnails.
+- Ran the full 1,000-book cached draft ingestion to `.local/catalog-drafts.jsonl`.
+- Added focused profile controller tests for `GET /profiles/me` and `PATCH /profiles/me`.
+- Updated backend, frontend, admin, catalog ingestion, and release documentation.
+
+Validation:
+
+- `npm run test --workspace @bookcompass/api -- --runInBand`
+- `npm run build --workspace @bookcompass/api`
+- `npm run build --workspace @bookcompass/web`
+- `npm run check`
+- `npm run test:e2e --workspace @bookcompass/api`
+- `npm run catalog:ingest -- --target 1000 --delay 100 --out .local/catalog-drafts.jsonl`
+- `MONGODB_URI=mongodb://localhost:27017/bookcompass npm run seed --workspace @bookcompass/api`
+- Live Docker MongoDB API smoke checks for `/health`, `/books?limit=30`, and `/authors?limit=30`
+
+Note:
+
+- The Day 7 catalog draft run produced 1,000 review-gated records: 993 ISBNs, 843 Google Books volume IDs, 635 descriptions, 550 thumbnails, and zero recommendation-eligible records by design.
+- Docker MongoDB validation returned 27 seeded books, 25 authors, 20 enriched books, and 14 thumbnail-backed books from the live API.
+
+Recommended Day 8 implementation target:
+
+- Add backend tests for reader-owned event and DNF `/me` list endpoints plus role-guarded global lists and catalog mutations.
+- Add a guarded admin bootstrap path or script for creating the first admin user.
+- Add admin CRUD screens only after the first-admin bootstrap path exists.
+- Continue Phase 2 reading identity UX polish and add a dedicated profile/history page if the onboarding route becomes too dense.
+- Prepare the recommendation engine input aggregator from profile, reading events, DNF records, and catalog candidates.
+
 ## Month-One Timeline
 
 ### Phase 1: Foundation
@@ -606,11 +674,11 @@ Output:
 
 ## Immediate Next Steps
 
-1. Add authenticated profile read/update endpoints and frontend session hydration.
-2. Expand onboarding into the Phase 2 reading identity flow.
-3. Add liked/disliked/completed/DNF capture against authenticated ownership.
-4. Add role policy before admin mutations are exposed.
-5. Review `.local/catalog-smoke.jsonl` and decide raw source caching before the 1,000-book draft run.
+1. Add tests for reader-owned event/DNF history and admin-only global list/catalog mutation policy.
+2. Create a safe admin bootstrap path or script for the first admin user.
+3. Add admin CRUD screens only after first-admin bootstrap exists.
+4. Prepare the recommendation engine input aggregator from profile, event, DNF, and catalog data.
+5. Run the larger catalog draft ingestion only with `GOOGLE_BOOKS_API_KEY` configured and caching enabled.
 
 ## Engineering Rules for Future Instances
 

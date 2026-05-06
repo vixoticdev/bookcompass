@@ -18,6 +18,9 @@
 - Domain modules now exist for auth, users, reading profiles, authors, books, reading events, DNF records, and recommendation sessions.
 - Day 5 auth ownership is documented in `docs/architecture/auth-ownership.md`: self-service user-owned writes derive `userId` from verified JWT claims.
 - Day 6 adds authenticated reader profile retrieval and update through `GET /profiles/me` and `PATCH /profiles/me`.
+- Day 7 adds reusable role metadata/guarding and protects catalog mutations plus global user/profile/event/DNF/recommendation-session list endpoints behind admin role checks.
+- Day 7 adds reader-owned behavior history reads through `GET /reading-events/me` and `GET /dnf-records/me`.
+- Day 7 enriches the repeatable seed catalog with Google Books metadata and adds book fields for subtitles, publication year, language, Google Books volume ID, and thumbnail URL.
 - Initial catalog seed script exists at `npm run seed --workspace @bookcompass/api`.
 - The Day 6 manual catalog batch expands the repeatable seed to 25 authors and 27 books for local exploration.
 - Catalog enrichment plan is documented in `docs/architecture/catalog-enrichment.md`.
@@ -26,13 +29,13 @@
 
 ```text
 src/
-  auth/                 implemented: local signup/login, password hashing, JWT issuance, request user extraction
-  users/                implemented: schema, DTO, service, minimal REST
-  profiles/             implemented: schema, DTO, authenticated current-reader read/update, minimal REST
+  auth/                 implemented: local signup/login, JWT issuance, JWT guard, role guard
+  users/                implemented: schema, DTO, service, reader create, admin list
+  profiles/             implemented: schema, DTO, authenticated current-reader read/update, admin list
   books/                implemented: schema, DTO, service, minimal REST
   authors/              implemented: schema, DTO, service, minimal REST
-  reading-events/       implemented: schema, DTO, service, minimal REST
-  dnf/                  implemented: schema, DTO, service, minimal REST
+  reading-events/       implemented: schema, DTO, service, reader create/history, admin list
+  dnf/                  implemented: schema, DTO, service, reader create/history, admin list
   recommendations/      implemented: session schema, DTO, service, minimal REST
   admin/                planned
   analytics/            planned
@@ -42,15 +45,15 @@ src/
 ## Current Endpoints
 
 - `POST /auth/signup`, `POST /auth/login`, `GET /auth/me`
-- `POST /users`, `GET /users`
-- `POST /profiles`, `GET /profiles/me`, `PATCH /profiles/me`, `GET /profiles`
-- `POST /authors`, `GET /authors`
-- `POST /books`, `GET /books`
-- `POST /reading-events`, `GET /reading-events`
-- `POST /dnf-records`, `GET /dnf-records`
-- `POST /recommendation-sessions`, `GET /recommendation-sessions`
+- `POST /users`, admin-only `GET /users`
+- `POST /profiles`, `GET /profiles/me`, `PATCH /profiles/me`, admin-only `GET /profiles`
+- admin-only `POST /authors`, `GET /authors`
+- admin-only `POST /books`, `GET /books`
+- `POST /reading-events`, `GET /reading-events/me`, admin-only `GET /reading-events`
+- `POST /dnf-records`, `GET /dnf-records/me`, admin-only `GET /dnf-records`
+- `POST /recommendation-sessions`, admin-only `GET /recommendation-sessions`
 
-These endpoints are intentionally thin foundation write/read paths. Self-service write endpoints for profiles, reading events, DNF records, and recommendation sessions require a bearer token and derive ownership from the authenticated request. Catalog reads and current list endpoints remain open for local MVP exploration until role policy is added.
+These endpoints are intentionally thin foundation write/read paths. Self-service write endpoints for profiles, reading events, DNF records, and recommendation sessions require a bearer token and derive ownership from the authenticated request. Catalog reads remain open for local MVP exploration; catalog mutations and global reader data lists now require an admin role.
 
 Profile ownership:
 
@@ -58,6 +61,8 @@ Profile ownership:
 - `GET /profiles/me` returns only the authenticated reader profile.
 - `PATCH /profiles/me` updates only the authenticated reader profile and does not accept `userId`.
 - Missing current profiles return `404` so the frontend can create the first profile for an authenticated user.
+- `GET /reading-events/me` and `GET /dnf-records/me` return only the authenticated reader's behavior history.
+- Public `POST /users` forces `role: reader`; admin creation must not be exposed through self-service signup.
 
 Catalog filters added on Day 3 and paginated on Day 4:
 
@@ -80,7 +85,7 @@ Catalog list response shape:
 - `User`: display name, unique indexed email, optional auth provider id, hidden password hash, role.
 - `ReadingProfile`: one profile per user with genres, target outcomes, depth, pacing/difficulty tolerance, formats, daily minutes, and estimated speed.
 - `Author`: unique indexed name, bio, known genres, and outcome strengths.
-- `Book`: title, author reference, ISBN, description, genres, outcome tags, pacing, difficulty, depth, formats, page count, and estimated minutes.
+- `Book`: title, author reference, ISBN, subtitle, description, publication year, language, genres, outcome tags, pacing, difficulty, depth, formats, page count, estimated minutes, Google Books volume ID, and thumbnail URL.
 - `ReadingEvent`: user/book timeline events such as started, liked, completed, abandoned, and saved.
 - `DnfRecord`: structured abandonment record with stopped percentage, reason, pacing/difficulty snapshot, and note.
 - `RecommendationSession`: user context for selected outcome, mood, energy, focus, available time, depth, candidates, score breakdowns, signals, and explanations.
@@ -119,12 +124,13 @@ Catalog list response shape:
 - Local passwords are hashed with `bcryptjs`.
 - JWTs are signed with `JWT_SECRET` or a local development fallback.
 - `GET /auth/me` returns the current public user from a valid bearer token.
+- `@Roles('admin')` plus `RolesGuard` protects catalog mutations and global reader-data list endpoints.
 - Frontend self-service clients should not send `userId` for profile, event, DNF, or recommendation session creation.
-- Admin ownership override and role policy are still planned.
+- Admin ownership override and production identity provider integration are still planned.
 
 ## Seed Data
 
-The seed script upserts the current repeatable local exploration catalog.
+The seed script upserts the current repeatable local exploration catalog. Day 7 enriched 20 of the 27 seeded books with Google Books volume IDs/publication metadata and 14 with thumbnails.
 
 Original MVP nonfiction seeds:
 
