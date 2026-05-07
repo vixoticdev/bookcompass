@@ -55,7 +55,7 @@ API:
 - role-based admin policy
 - reader-owned profile, event, DNF, and recommendation session writes
 - catalog read/filter endpoints
-- future admin catalog mutation endpoints
+- admin catalog create, update, and delete endpoints
 - deterministic recommendation candidate generation, scoring, and explanation
 
 MongoDB:

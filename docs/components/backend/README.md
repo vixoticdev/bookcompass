@@ -25,6 +25,7 @@
 - Day 8 prepares recommendation input aggregation inside `RecommendationsService` by loading profile, reading events, DNF records, and catalog candidates for a decision context.
 - Day 9 adds first-pass deterministic recommendation scoring and reader-owned recommendation history through `GET /recommendation-sessions/me`.
 - Day 10 adds authenticated candidate feedback capture through `POST /recommendation-sessions/:sessionId/feedback` and maps feedback into reading events for future scoring.
+- Day 11 expands catalog CRUD with detail reads plus admin-only update and delete paths for authors and books.
 - Initial catalog seed script exists at `npm run seed --workspace @bookcompass/api`.
 - First admin bootstrap script exists at `npm run bootstrap:admin --workspace @bookcompass/api` and reads `ADMIN_EMAIL`, `ADMIN_PASSWORD`, and optional `ADMIN_DISPLAY_NAME`.
 - The Day 6 manual catalog batch expands the repeatable seed to 25 authors and 27 books for local exploration.
@@ -37,8 +38,8 @@ src/
   auth/                 implemented: local signup/login, JWT issuance, JWT guard, role guard
   users/                implemented: schema, DTO, service, reader create, admin list
   profiles/             implemented: schema, DTO, authenticated current-reader read/update, admin list
-  books/                implemented: schema, DTO, service, minimal REST
-  authors/              implemented: schema, DTO, service, minimal REST
+  books/                implemented: schema, DTO, service, catalog REST with admin mutations
+  authors/              implemented: schema, DTO, service, catalog REST with admin mutations
   reading-events/       implemented: schema, DTO, service, reader create/history, admin list
   dnf/                  implemented: schema, DTO, service, reader create/history, admin list
   recommendations/      implemented: session schema, DTO, input aggregation, deterministic scoring, reader history, feedback capture, minimal REST
@@ -52,8 +53,8 @@ src/
 - `POST /auth/signup`, `POST /auth/login`, `GET /auth/me`
 - `POST /users`, admin-only `GET /users`
 - `POST /profiles`, `GET /profiles/me`, `PATCH /profiles/me`, admin-only `GET /profiles`
-- admin-only `POST /authors`, `GET /authors`
-- admin-only `POST /books`, `GET /books`
+- admin-only `POST /authors`, `PATCH /authors/:authorId`, `DELETE /authors/:authorId`, public `GET /authors`, public `GET /authors/:authorId`
+- admin-only `POST /books`, `PATCH /books/:bookId`, `DELETE /books/:bookId`, public `GET /books`, public `GET /books/:bookId`
 - `POST /reading-events`, `GET /reading-events/me`, admin-only `GET /reading-events`
 - `POST /dnf-records`, `GET /dnf-records/me`, admin-only `GET /dnf-records`
 - `POST /recommendation-sessions`, `GET /recommendation-sessions/me`, `POST /recommendation-sessions/:sessionId/feedback`, admin-only `GET /recommendation-sessions`
@@ -106,6 +107,7 @@ Catalog list response shape:
 - Shared domain constants from `@bookcompass/shared` validate outcomes, reading depth, event type, DNF reason, mood, energy, focus, book format, pacing, and difficulty.
 - Numeric fields have explicit bounds for minutes, percentages, page counts, and reading speed.
 - List query DTOs validate catalog filter values before they reach service queries.
+- Catalog update DTOs keep all fields optional but preserve the same validation bounds as create DTOs.
 - Catalog pagination is validated and normalized to a maximum page size of 100.
 - Catalog text search escapes regex metacharacters before querying MongoDB.
 

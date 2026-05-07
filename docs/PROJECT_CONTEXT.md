@@ -231,6 +231,8 @@ As of 2026-05-07:
 - Shared package contains core domain constants used by backend DTO validation.
 - Backend catalog list endpoints now support basic filters for seed/admin exploration.
 - Backend catalog list endpoints now return paginated page objects with `items`, `total`, `limit`, and `offset`.
+- Backend catalog detail endpoints now support `GET /authors/:authorId` and `GET /books/:bookId`.
+- Backend catalog mutations now support admin-only create, update, and delete for authors and books.
 - API seed script exists for authors/books: `npm run seed --workspace @bookcompass/api`.
 - API seed script now includes a manually reviewed Day 6 catalog expansion with 25 authors and 27 books total for local exploration.
 - API seed script now includes Day 7 Google Books enrichment for 20 of the 27 seeded books, with 14 thumbnail-backed records.
@@ -261,6 +263,7 @@ As of 2026-05-07:
 - `/recommendations/history` now displays authenticated reader recommendation sessions and explanation lines.
 - `/recommendations/history` and newly scored session cards can capture recommendation feedback on the top candidates.
 - `/admin/books` now has guarded author and book create forms backed by admin-only `POST /authors` and `POST /books`.
+- `/admin/books` now supports inline author and book edit/delete operations backed by admin-only `PATCH`/`DELETE` catalog endpoints.
 - Catalog enrichment plan is documented in `docs/architecture/catalog-enrichment.md`.
 - MVP HLD and LLD are documented in `docs/architecture/mvp-high-level-design.md` and `docs/architecture/mvp-low-level-design.md`.
 - Catalog ingestion scaffold exists in `tools/catalog-ingestion` for a 1,000-book mixed-genre draft catalog using Open Library discovery plus Google Books enrichment.
@@ -274,8 +277,8 @@ As of 2026-05-07:
 - Production identity provider integration is not implemented yet.
 - Recommendation engine is documented; session storage, input aggregation, first-pass scoring/ranking, score breakdowns, signals, and explanation lines exist.
 - Recommendation service can now build scoring input from profile, reading events, DNF records, and catalog candidates for a decision context.
-- Admin dashboard is documented; first-pass author/book create screens exist inside `/admin/books`.
-- Admin edit/delete screens and tuning controls are not implemented yet.
+- Admin dashboard is documented; first-pass author/book create, edit, and delete screens exist inside `/admin/books`.
+- Dedicated author management, catalog review queues, analytics, and tuning controls are not implemented yet.
 - CI/CD is not configured yet.
 
 Important historical context:
@@ -697,6 +700,37 @@ Recommended Day 11 implementation target:
 - Add a dedicated reader profile/history page that consolidates profile preferences, behavior signals, DNF records, and recommendation feedback.
 - Add richer catalog metadata review fields for anti-DNF tuning.
 
+### Day 11: 2026-05-07
+
+Goal: expand admin catalog CRUD for authors and books.
+
+Branch: `day11-2026-05-07-admin-catalog-crud`
+
+Completed:
+
+- Added update DTOs for authors and books with the same validation boundaries used by create flows.
+- Added public catalog detail reads through `GET /authors/:authorId` and `GET /books/:bookId`.
+- Added admin-only `PATCH /authors/:authorId`, `DELETE /authors/:authorId`, `PATCH /books/:bookId`, and `DELETE /books/:bookId`.
+- Catalog services now throw `404` for missing detail, update, and delete targets.
+- Added focused service tests for detail lookup, update, delete, and missing-record failures.
+- Expanded controller metadata tests so create, update, and delete catalog mutations stay admin guarded.
+- Wired frontend API clients, React Query mutations, and `/admin/books` inline controls for author/book edit and delete.
+- Updated backend, frontend, admin dashboard, MVP LLD, and release documentation.
+
+Validation:
+
+- `npm run test --workspace @bookcompass/api -- books authors --runInBand`
+- `npm run check`
+- `npm run test --workspace @bookcompass/api -- --runInBand`
+- `npm run test:e2e --workspace @bookcompass/api`
+- Live Docker MongoDB API smoke for admin login, author create/update/delete, book create/update/detail/delete
+
+Recommended Day 12 implementation target:
+
+- Split dedicated `/admin/authors` routing out of the combined catalog screen.
+- Add richer catalog metadata review fields for anti-DNF tuning and recommendation eligibility.
+- Add a dedicated reader profile/history page that consolidates profile preferences, behavior signals, DNF records, and recommendation feedback.
+
 ## Month-One Timeline
 
 ### Phase 1: Foundation
@@ -831,9 +865,9 @@ Output:
 
 ## Immediate Next Steps
 
-1. Expand admin catalog operations with edit/delete and a dedicated author management route.
-2. Add a dedicated profile/history page that consolidates profile preferences, behavior signals, DNF records, and recommendation feedback.
-3. Add richer catalog metadata review fields for anti-DNF tuning.
+1. Split dedicated `/admin/authors` routing out of the combined catalog screen.
+2. Add richer catalog metadata review fields for anti-DNF tuning and recommendation eligibility.
+3. Add a dedicated profile/history page that consolidates profile preferences, behavior signals, DNF records, and recommendation feedback.
 4. Keep larger catalog draft ingestion behind `GOOGLE_BOOKS_API_KEY` and cached source responses.
 5. Add frontend polish around feedback notes/progress when recommendation outcomes need more detail than one-click status.
 
