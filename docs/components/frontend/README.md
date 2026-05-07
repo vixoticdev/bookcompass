@@ -129,6 +129,12 @@ Day 9 recommendation and admin routes:
 - `/recommendations/history` reads `GET /recommendation-sessions/me` and displays the latest scored candidates with explanation lines.
 - `/admin/books` now includes first-pass guarded create forms for authors and books, backed by admin-only `POST /authors` and `POST /books`.
 
+Day 10 recommendation feedback:
+
+- Recommendation session cards now expose one-click feedback controls for accepted, rejected, started, completed, and abandoned suggestions.
+- Feedback posts to `POST /recommendation-sessions/:sessionId/feedback`.
+- Successful feedback refreshes recommendation history and reader-owned behavior history queries.
+
 Browser metadata:
 
 - The browser tab favicon uses `public/bookcompass-icon.png`.
@@ -151,6 +157,7 @@ Browser metadata:
 - `GET /dnf-records/me`
 - `POST /recommendation-sessions`
 - `GET /recommendation-sessions/me`
+- `POST /recommendation-sessions/:sessionId/feedback`
 - admin-only `POST /authors`
 - admin-only `POST /books`
 

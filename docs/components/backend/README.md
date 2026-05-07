@@ -24,6 +24,7 @@
 - Day 8 adds a controlled first-admin bootstrap script and focused backend tests for reader-owned history endpoints, admin role guarding, and admin-only catalog mutations.
 - Day 8 prepares recommendation input aggregation inside `RecommendationsService` by loading profile, reading events, DNF records, and catalog candidates for a decision context.
 - Day 9 adds first-pass deterministic recommendation scoring and reader-owned recommendation history through `GET /recommendation-sessions/me`.
+- Day 10 adds authenticated candidate feedback capture through `POST /recommendation-sessions/:sessionId/feedback` and maps feedback into reading events for future scoring.
 - Initial catalog seed script exists at `npm run seed --workspace @bookcompass/api`.
 - First admin bootstrap script exists at `npm run bootstrap:admin --workspace @bookcompass/api` and reads `ADMIN_EMAIL`, `ADMIN_PASSWORD`, and optional `ADMIN_DISPLAY_NAME`.
 - The Day 6 manual catalog batch expands the repeatable seed to 25 authors and 27 books for local exploration.
@@ -40,7 +41,7 @@ src/
   authors/              implemented: schema, DTO, service, minimal REST
   reading-events/       implemented: schema, DTO, service, reader create/history, admin list
   dnf/                  implemented: schema, DTO, service, reader create/history, admin list
-  recommendations/      implemented: session schema, DTO, input aggregation, deterministic scoring, reader history, minimal REST
+  recommendations/      implemented: session schema, DTO, input aggregation, deterministic scoring, reader history, feedback capture, minimal REST
   admin/                implemented: first-admin bootstrap script; screens planned
   analytics/            planned
   billing/              planned
@@ -55,7 +56,7 @@ src/
 - admin-only `POST /books`, `GET /books`
 - `POST /reading-events`, `GET /reading-events/me`, admin-only `GET /reading-events`
 - `POST /dnf-records`, `GET /dnf-records/me`, admin-only `GET /dnf-records`
-- `POST /recommendation-sessions`, `GET /recommendation-sessions/me`, admin-only `GET /recommendation-sessions`
+- `POST /recommendation-sessions`, `GET /recommendation-sessions/me`, `POST /recommendation-sessions/:sessionId/feedback`, admin-only `GET /recommendation-sessions`
 
 These endpoints are intentionally thin foundation write/read paths. Self-service write endpoints for profiles, reading events, DNF records, and recommendation sessions require a bearer token and derive ownership from the authenticated request. Catalog reads remain open for local MVP exploration; catalog mutations and global reader data lists now require an admin role.
 
@@ -67,6 +68,7 @@ Profile ownership:
 - Missing current profiles return `404` so the frontend can create the first profile for an authenticated user.
 - `GET /reading-events/me` and `GET /dnf-records/me` return only the authenticated reader's behavior history.
 - `GET /recommendation-sessions/me` returns only the authenticated reader's scored recommendation sessions.
+- `POST /recommendation-sessions/:sessionId/feedback` updates only candidates inside the authenticated reader's own session and writes a reusable reading event from the feedback status.
 - Public `POST /users` forces `role: reader`; admin creation must not be exposed through self-service signup.
 
 Catalog filters added on Day 3 and paginated on Day 4:
@@ -93,7 +95,7 @@ Catalog list response shape:
 - `Book`: title, author reference, ISBN, subtitle, description, publication year, language, genres, outcome tags, pacing, difficulty, depth, formats, page count, estimated minutes, Google Books volume ID, and thumbnail URL.
 - `ReadingEvent`: user/book timeline events such as started, liked, completed, abandoned, and saved.
 - `DnfRecord`: structured abandonment record with stopped percentage, reason, pacing/difficulty snapshot, and note.
-- `RecommendationSession`: user context for selected outcome, mood, energy, focus, available time, depth, candidates, score breakdowns, signals, and explanations.
+- `RecommendationSession`: user context for selected outcome, mood, energy, focus, available time, depth, candidates, score breakdowns, signals, explanations, and optional candidate feedback.
 
 ## Validation Rules
 

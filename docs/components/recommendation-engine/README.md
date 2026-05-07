@@ -12,6 +12,8 @@ Day 8 adds the first recommendation input aggregator in `RecommendationsService.
 
 Day 9 adds first-pass deterministic scoring. `POST /recommendation-sessions` now builds the Day 8 input, scores up to 50 filtered catalog candidates, persists the top 10 ranked candidates, and stores explanation lines. `GET /recommendation-sessions/me` returns the authenticated reader's history.
 
+Day 10 adds the first feedback loop. `POST /recommendation-sessions/:sessionId/feedback` records accepted, rejected, started, completed, or abandoned status on a candidate in the authenticated reader's own session, then writes a reading event so later scoring can reuse the outcome.
+
 ## Inputs
 
 - reading profile
@@ -25,6 +27,7 @@ Day 9 adds first-pass deterministic scoring. `POST /recommendation-sessions` now
 - focus level
 - available time
 - preferred depth
+- recommendation feedback from prior suggestions through derived reading events
 
 Current candidate filter baseline:
 
@@ -62,6 +65,13 @@ Every recommendation must include:
 - why it fits the user's current context
 - which behavior signals influenced the score
 - what DNF risk was avoided or accepted
+
+Feedback capture must preserve:
+
+- which candidate book received feedback
+- whether the reader accepted, rejected, started, completed, or abandoned it
+- when feedback was recorded
+- enough behavior-event data for later scoring and analytics
 
 Example:
 

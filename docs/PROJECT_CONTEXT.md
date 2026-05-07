@@ -250,6 +250,7 @@ As of 2026-05-07:
 - Backend exposes reader-owned behavior history through `GET /reading-events/me` and `GET /dnf-records/me`.
 - Backend exposes reader-owned recommendation history through `GET /recommendation-sessions/me`.
 - `POST /recommendation-sessions` now builds recommendation input, scores catalog candidates deterministically, persists the top ranked candidates, and marks sessions `scored`.
+- Recommendation candidates now support authenticated reader feedback for accepted, rejected, started, completed, and abandoned suggestions, and that feedback writes reusable reading events.
 - Backend has focused tests covering reader-owned event/DNF history, `RolesGuard`, admin-only global list metadata, and admin-only catalog mutation metadata.
 - Project workflow now requires a new daily branch for every development session, explicit unit tests with edge-case coverage, intensive validation before completion, and GitHub pushes only after all checks pass.
 - Frontend session state hydrates from `GET /auth/me` when a local bearer token exists.
@@ -258,6 +259,7 @@ As of 2026-05-07:
 - `/onboarding/signals` now displays reader-owned reading event and DNF history.
 - `/recommendations/new` now creates scored recommendation sessions from current decision context.
 - `/recommendations/history` now displays authenticated reader recommendation sessions and explanation lines.
+- `/recommendations/history` and newly scored session cards can capture recommendation feedback on the top candidates.
 - `/admin/books` now has guarded author and book create forms backed by admin-only `POST /authors` and `POST /books`.
 - Catalog enrichment plan is documented in `docs/architecture/catalog-enrichment.md`.
 - MVP HLD and LLD are documented in `docs/architecture/mvp-high-level-design.md` and `docs/architecture/mvp-low-level-design.md`.
@@ -397,6 +399,8 @@ Validation:
 - `npm run check`
 - `npm run test --workspace @bookcompass/api -- --runInBand`
 - `npm run test:e2e --workspace @bookcompass/api`
+- `MONGODB_URI=mongodb://localhost:27017/bookcompass npm run seed --workspace @bookcompass/api`
+- Live Docker MongoDB API smoke for signup, profile creation, `POST /recommendation-sessions`, `POST /recommendation-sessions/:sessionId/feedback`, and `GET /reading-events/me`
 - `MONGODB_URI=mongodb://localhost:27017/bookcompass npm run seed --workspace @bookcompass/api`
 
 Note:
@@ -662,6 +666,37 @@ Recommended Day 10 implementation target:
 - Expand admin catalog operations with edit/delete and a dedicated author management route.
 - Add a dedicated reader profile/history route if onboarding remains too dense.
 
+### Day 10: 2026-05-07
+
+Goal: add the first recommendation feedback loop.
+
+Branch: `day10-2026-05-07-recommendation-feedback`
+
+Completed:
+
+- Added shared recommendation feedback statuses for accepted, rejected, started, completed, and abandoned suggestions.
+- Added candidate-level recommendation feedback storage with status, progress, note, and recorded timestamp.
+- Added authenticated reader-owned `POST /recommendation-sessions/:sessionId/feedback`.
+- Feedback updates are scoped by current reader, session id, and candidate book id.
+- Feedback writes reusable reading events so accepted maps to saved, rejected maps to disliked, and started/completed/abandoned map to matching behavior events.
+- Added focused recommendation service tests for feedback persistence, behavior-event creation, and ownership-boundary rejection.
+- Added controller coverage for authenticated feedback routing.
+- Wired frontend recommendation cards with feedback controls for the top scored candidates.
+- Updated backend, frontend, recommendation engine, and MVP LLD documentation.
+
+Validation:
+
+- `npm run test --workspace @bookcompass/api -- recommendations --runInBand`
+- `npm run check`
+- `npm run test --workspace @bookcompass/api -- --runInBand`
+- `npm run test:e2e --workspace @bookcompass/api`
+
+Recommended Day 11 implementation target:
+
+- Expand admin catalog operations with edit/delete and a dedicated author management route.
+- Add a dedicated reader profile/history page that consolidates profile preferences, behavior signals, DNF records, and recommendation feedback.
+- Add richer catalog metadata review fields for anti-DNF tuning.
+
 ## Month-One Timeline
 
 ### Phase 1: Foundation
@@ -796,11 +831,11 @@ Output:
 
 ## Immediate Next Steps
 
-1. Add recommendation feedback capture for accepted, rejected, started, completed, and abandoned suggestions.
-2. Expand admin catalog operations with edit/delete and a dedicated author management route.
-3. Add a dedicated profile/history page if onboarding continues to carry too much post-signup behavior UI.
-4. Add richer catalog metadata review fields for anti-DNF tuning.
-5. Keep larger catalog draft ingestion behind `GOOGLE_BOOKS_API_KEY` and cached source responses.
+1. Expand admin catalog operations with edit/delete and a dedicated author management route.
+2. Add a dedicated profile/history page that consolidates profile preferences, behavior signals, DNF records, and recommendation feedback.
+3. Add richer catalog metadata review fields for anti-DNF tuning.
+4. Keep larger catalog draft ingestion behind `GOOGLE_BOOKS_API_KEY` and cached source responses.
+5. Add frontend polish around feedback notes/progress when recommendation outcomes need more detail than one-click status.
 
 ## Engineering Rules For Future Development Sessions
 
