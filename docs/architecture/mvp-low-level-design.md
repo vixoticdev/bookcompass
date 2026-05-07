@@ -54,6 +54,7 @@ Recommendations:
 - `GET /recommendation-sessions/me`: authenticated current-reader recommendation history.
 - `POST /recommendation-sessions/:sessionId/feedback`: authenticated current-reader feedback capture for a scored candidate.
 - `GET /recommendation-sessions`: admin-only global list.
+- `GET /recommendation-sessions/admin/analytics`: admin-only operational analytics for catalog review queue counts and candidate feedback outcomes.
 - Current module can build recommendation input from profile, reading events, DNF records, and catalog candidates through `RecommendationsService.buildInput`.
 - Current module scores candidates through deterministic outcome, profile, context, time, behavior, and anti-DNF signals.
 - Current module records feedback only when the session belongs to the authenticated reader and the book id is present in the session candidates.
@@ -108,6 +109,7 @@ Route responsibilities:
 - `/recommendations/history`: reads current-reader scored recommendation history.
 - `/admin/authors`: lists, creates, edits, and deletes authors through guarded admin endpoints.
 - `/admin/books`: lists, creates, edits, and deletes books and review metadata through guarded admin endpoints.
+- `/admin`: shows admin analytics for catalog review readiness and recommendation feedback outcomes.
 
 React Query owns server state. Axios owns bearer token attachment from `localStorage`.
 
@@ -147,6 +149,12 @@ Recommendation feedback:
 2. API verifies the session belongs to the authenticated reader and includes the candidate book.
 3. API stores candidate-level feedback with status, optional progress/note, and timestamp.
 4. API writes a reusable reading event: accepted becomes saved, rejected becomes disliked, and started/completed/abandoned map directly.
+
+Admin analytics:
+
+1. Web reads `GET /recommendation-sessions/admin/analytics` with an admin JWT.
+2. API returns catalog review totals by enrichment status and recommendation eligibility.
+3. API returns recorded recommendation candidate feedback totals grouped by feedback status.
 
 Catalog ingestion:
 

@@ -32,6 +32,13 @@ export class RecommendationsController {
     return this.recommendationsService.findByUserId(user.id);
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @Get('admin/analytics')
+  adminAnalytics() {
+    return this.recommendationsService.getAdminAnalytics();
+  }
+
   @UseGuards(JwtAuthGuard)
   @Post(':sessionId/feedback')
   recordFeedback(

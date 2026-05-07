@@ -69,6 +69,13 @@ export function buildBookFilters(query: ListBooksQueryDto) {
   return filters;
 }
 
+export type BookReviewAnalytics = {
+  total: number;
+  eligible: number;
+  ineligible: number;
+  byEnrichmentStatus: Record<string, number>;
+};
+
 @Injectable()
 export class BooksService {
   constructor(
@@ -103,6 +110,36 @@ export class BooksService {
     ]);
 
     return { items, total, limit, offset };
+  }
+
+  async getReviewAnalytics(): Promise<BookReviewAnalytics> {
+    const [total, eligible, byStatus] = await Promise.all([
+      this.bookModel.countDocuments({}).exec(),
+      this.bookModel.countDocuments({ recommendationEligible: true }).exec(),
+      this.bookModel
+        .aggregate<{ _id: string | null; count: number }>([
+          {
+            $group: {
+              _id: '$enrichmentStatus',
+              count: { $sum: 1 },
+            },
+          },
+        ])
+        .exec(),
+    ]);
+
+    return {
+      total,
+      eligible,
+      ineligible: total - eligible,
+      byEnrichmentStatus: byStatus.reduce<Record<string, number>>(
+        (counts, status) => ({
+          ...counts,
+          [status._id ?? 'unset']: status.count,
+        }),
+        {},
+      ),
+    };
   }
 
   upsertByTitleAndAuthor(createBookDto: CreateBookDto) {

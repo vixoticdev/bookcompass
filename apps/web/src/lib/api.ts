@@ -204,6 +204,19 @@ export type RecommendationFeedback = {
   recordedAt: string;
 };
 
+export type AdminAnalytics = {
+  catalogReview: {
+    total: number;
+    eligible: number;
+    ineligible: number;
+    byEnrichmentStatus: Record<string, number>;
+  };
+  candidateFeedback: {
+    totalRecorded: number;
+    byStatus: Record<string, number>;
+  };
+};
+
 export type RecordRecommendationFeedbackInput = {
   sessionId: string;
   bookId: string;
@@ -276,6 +289,15 @@ export function listBooks(params: {
 } = {}) {
   return axiosInstance
     .get<CatalogPage<Book>>('/books', { params: cleanParams(params) })
+    .then((response) => response.data)
+    .catch((error: unknown) => {
+      throw toApiError(error);
+    });
+}
+
+export function getAdminAnalytics() {
+  return axiosInstance
+    .get<AdminAnalytics>('/recommendation-sessions/admin/analytics')
     .then((response) => response.data)
     .catch((error: unknown) => {
       throw toApiError(error);

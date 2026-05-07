@@ -6,6 +6,7 @@ import { RecommendationsService } from './recommendations.service';
 
 describe('RecommendationsController', () => {
   const recommendationsService = {
+    getAdminAnalytics: jest.fn(),
     create: jest.fn(),
     findAll: jest.fn(),
     findByUserId: jest.fn(),
@@ -78,5 +79,16 @@ describe('RecommendationsController', () => {
 
     expect(guards).toContain(RolesGuard);
     expect(Reflect.getMetadata(ROLES_KEY, findAllHandler)).toEqual(['admin']);
+  });
+
+  it('marks the admin analytics endpoint as admin guarded', () => {
+    const handler = Object.getOwnPropertyDescriptor(
+      RecommendationsController.prototype,
+      'adminAnalytics',
+    )?.value as object;
+    const guards = Reflect.getMetadata(GUARDS_METADATA, handler) as unknown[];
+
+    expect(guards).toContain(RolesGuard);
+    expect(Reflect.getMetadata(ROLES_KEY, handler)).toEqual(['admin']);
   });
 });

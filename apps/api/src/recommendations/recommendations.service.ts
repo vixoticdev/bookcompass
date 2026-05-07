@@ -55,6 +55,14 @@ type ScoredCandidate = {
   explanation: string[];
 };
 
+export type AdminRecommendationAnalytics = {
+  catalogReview: Awaited<ReturnType<BooksService['getReviewAnalytics']>>;
+  candidateFeedback: {
+    totalRecorded: number;
+    byStatus: Record<string, number>;
+  };
+};
+
 @Injectable()
 export class RecommendationsService {
   constructor(
@@ -100,6 +108,42 @@ export class RecommendationsService {
       .find({ userId })
       .sort({ createdAt: -1 })
       .exec();
+  }
+
+  async getAdminAnalytics(): Promise<AdminRecommendationAnalytics> {
+    const [catalogReview, feedbackStatuses] = await Promise.all([
+      this.booksService.getReviewAnalytics(),
+      this.recommendationSessionModel
+        .aggregate<{ _id: string | null; count: number }>([
+          { $unwind: '$candidates' },
+          { $match: { 'candidates.feedback.status': { $exists: true } } },
+          {
+            $group: {
+              _id: '$candidates.feedback.status',
+              count: { $sum: 1 },
+            },
+          },
+        ])
+        .exec(),
+    ]);
+    const byStatus = feedbackStatuses.reduce<Record<string, number>>(
+      (counts, status) => ({
+        ...counts,
+        [status._id ?? 'unknown']: status.count,
+      }),
+      {},
+    );
+
+    return {
+      catalogReview,
+      candidateFeedback: {
+        byStatus,
+        totalRecorded: Object.values(byStatus).reduce(
+          (total, count) => total + count,
+          0,
+        ),
+      },
+    };
   }
 
   async recordFeedback(
