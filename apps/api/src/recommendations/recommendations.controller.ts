@@ -25,6 +25,12 @@ export class RecommendationsController {
     });
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Get('me')
+  findMine(@CurrentUser() user: AuthenticatedUser) {
+    return this.recommendationsService.findByUserId(user.id);
+  }
+
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
   @Get()

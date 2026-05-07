@@ -36,6 +36,33 @@ export type Book = {
   thumbnailUrl?: string;
 };
 
+export type CreateAuthorInput = {
+  name: string;
+  bio?: string;
+  knownForGenres?: string[];
+  outcomeStrengths?: string[];
+};
+
+export type CreateBookInput = {
+  title: string;
+  authorId: string;
+  isbn?: string;
+  subtitle?: string;
+  description?: string;
+  publishedYear?: number;
+  language?: string;
+  genres?: string[];
+  outcomeTags?: string[];
+  pacing?: string;
+  difficulty?: string;
+  depth?: string;
+  formats?: string[];
+  pageCount?: number;
+  estimatedMinutes?: number;
+  googleBooksVolumeId?: string;
+  thumbnailUrl?: string;
+};
+
 export type CreateUserInput = {
   displayName: string;
   email: string;
@@ -117,6 +144,39 @@ export type DnfRecord = DnfRecordInput & {
   updatedAt?: string;
 };
 
+export type RecommendationContext = {
+  selectedOutcome: string;
+  mood: string;
+  energyLevel: string;
+  focusLevel: string;
+  availableMinutes: number;
+  preferredDepth: string;
+};
+
+export type RecommendationSignal = {
+  key: string;
+  label: string;
+  scoreImpact: number;
+};
+
+export type RecommendationCandidate = {
+  bookId: string;
+  finalScore: number;
+  scoreBreakdown: Record<string, number>;
+  signals: RecommendationSignal[];
+  explanation: string[];
+};
+
+export type RecommendationSession = {
+  _id: string;
+  userId: string;
+  context: RecommendationContext;
+  candidates: RecommendationCandidate[];
+  status: string;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
 export class ApiError extends Error {
   readonly status: number;
 
@@ -175,6 +235,24 @@ export function listBooks(params: {
 } = {}) {
   return axiosInstance
     .get<CatalogPage<Book>>('/books', { params: cleanParams(params) })
+    .then((response) => response.data)
+    .catch((error: unknown) => {
+      throw toApiError(error);
+    });
+}
+
+export function createAuthor(input: CreateAuthorInput) {
+  return axiosInstance
+    .post<Author>('/authors', input)
+    .then((response) => response.data)
+    .catch((error: unknown) => {
+      throw toApiError(error);
+    });
+}
+
+export function createBook(input: CreateBookInput) {
+  return axiosInstance
+    .post<Book>('/books', input)
     .then((response) => response.data)
     .catch((error: unknown) => {
       throw toApiError(error);
@@ -274,6 +352,26 @@ export function listMyReadingEvents() {
 export function listMyDnfRecords() {
   return axiosInstance
     .get<DnfRecord[]>('/dnf-records/me')
+    .then((response) => response.data)
+    .catch((error: unknown) => {
+      throw toApiError(error);
+    });
+}
+
+export function createRecommendationSession(input: {
+  context: RecommendationContext;
+}) {
+  return axiosInstance
+    .post<RecommendationSession>('/recommendation-sessions', input)
+    .then((response) => response.data)
+    .catch((error: unknown) => {
+      throw toApiError(error);
+    });
+}
+
+export function listMyRecommendationSessions() {
+  return axiosInstance
+    .get<RecommendationSession[]>('/recommendation-sessions/me')
     .then((response) => response.data)
     .catch((error: unknown) => {
       throw toApiError(error);

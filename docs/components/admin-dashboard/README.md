@@ -48,3 +48,11 @@ The admin dashboard makes BookCompass operationally tunable. It should help the 
 - Run `ADMIN_EMAIL=... ADMIN_PASSWORD=... npm run bootstrap:admin --workspace @bookcompass/api` to upsert an admin user.
 - The script also accepts optional `ADMIN_DISPLAY_NAME`.
 - Admin CRUD screens should be added after logging in with an admin JWT can be exercised locally.
+
+## Day 9 Admin Create Flows
+
+- `/admin/books` now includes guarded author and book create forms.
+- Author creation posts to admin-only `POST /authors`.
+- Book creation posts to admin-only `POST /books`.
+- The screen still lists filtered catalog records for review by title and outcome.
+- Full edit/delete workflows, catalog review queues, and dedicated `/admin/authors` routing remain planned.

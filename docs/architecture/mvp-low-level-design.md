@@ -45,9 +45,11 @@ Catalog:
 
 Recommendations:
 
-- Current module persists recommendation sessions only.
+- `POST /recommendation-sessions`: authenticated self-service create; derives `userId`, builds recommendation input, scores candidates, and persists the ranked session.
+- `GET /recommendation-sessions/me`: authenticated current-reader recommendation history.
+- `GET /recommendation-sessions`: admin-only global list.
 - Current module can build recommendation input from profile, reading events, DNF records, and catalog candidates through `RecommendationsService.buildInput`.
-- Next implementation step is service-level candidate scoring using the aggregated input.
+- Current module scores candidates through deterministic outcome, profile, context, time, behavior, and anti-DNF signals.
 
 ## Access Policy
 
@@ -92,6 +94,9 @@ Route responsibilities:
 - `/onboarding/signup`: account creation and initial JWT storage.
 - `/onboarding/preferences`: current profile create/update through `/profiles/me` contracts.
 - `/onboarding/signals`: event and DNF capture plus reader-owned history display.
+- `/recommendations/new`: creates a scored recommendation session.
+- `/recommendations/history`: reads current-reader scored recommendation history.
+- `/admin/books`: lists catalog records and creates authors/books through guarded admin endpoints.
 
 React Query owns server state. Axios owns bearer token attachment from `localStorage`.
 
@@ -118,6 +123,13 @@ Behavior capture:
 3. API derives ownership from JWT.
 4. Web refreshes `GET /reading-events/me` and `GET /dnf-records/me`.
 
+Recommendation session:
+
+1. Web posts decision context to `POST /recommendation-sessions`.
+2. API derives ownership from JWT and builds input from profile, behavior, DNF records, and catalog candidates.
+3. API persists the top ranked scored candidates with score breakdowns, signals, and explanation lines.
+4. Web reads `GET /recommendation-sessions/me` for reader-owned history.
+
 Catalog ingestion:
 
 1. Open Library candidate search by genre.
@@ -143,7 +155,7 @@ Day 8 aggregator baseline:
 - load current-reader DNF records
 - load up to 50 catalog candidates filtered by selected outcome, preferred depth, and available minutes
 
-The MVP scoring output should persist:
+The MVP scoring output persists:
 
 - candidate book id
 - final score
@@ -157,5 +169,5 @@ The MVP scoring output should persist:
 - auth token behavior and role policy
 - `/profiles/me` read/update ownership
 - reader-owned event and DNF list endpoints
-- recommendation scoring unit tests when implemented
+- recommendation scoring unit tests
 - catalog filter and ingestion smoke tests

@@ -6,9 +6,11 @@ The MVP recommendation engine is deterministic and explainable. It will live ins
 
 ## Current Backend Foundation
 
-Day 2 added `apps/api/src/recommendations` with `RecommendationSession` storage. This is not scoring yet; it records the user's decision context and reserves structure for future candidates, score breakdowns, scoring signals, and explanation lines.
+Day 2 added `apps/api/src/recommendations` with `RecommendationSession` storage. It records the user's decision context and reserves structure for candidates, score breakdowns, scoring signals, and explanation lines.
 
 Day 8 adds the first recommendation input aggregator in `RecommendationsService.buildInput`. It gathers the authenticated reader profile, reading events, DNF records, and catalog candidates filtered by selected outcome, preferred depth, and available minutes. The method deliberately does not score candidates yet; it creates the service boundary the deterministic engine will consume next.
+
+Day 9 adds first-pass deterministic scoring. `POST /recommendation-sessions` now builds the Day 8 input, scores up to 50 filtered catalog candidates, persists the top 10 ranked candidates, and stores explanation lines. `GET /recommendation-sessions/me` returns the authenticated reader's history.
 
 ## Inputs
 
@@ -37,11 +39,20 @@ Current candidate filter baseline:
 finalScore =
   outcomeFit
   + personalFit
-  + moodFit
+  + contextFit
   + timeFit
-  + collaborativeFit
+  + behaviorFit
   - dnfRisk
 ```
+
+Implemented Day 9 scoring signals:
+
+- outcome fit: selected outcome and profile target outcome matches
+- personal fit: favorite/disliked genre overlap, depth, pacing, difficulty, and format fit
+- context fit: mood, energy, focus, requested depth, and difficulty/depth suitability
+- time fit: selected available minutes and weekly reading capacity from the profile
+- behavior fit: saved/completed/disliked/abandoned history for the same book
+- anti-DNF risk: direct prior DNF is heavily penalized; pacing/difficulty pattern matches receive a smaller penalty; candidates without a matching DNF pattern receive a small positive signal
 
 ## Explainability Requirement
 
