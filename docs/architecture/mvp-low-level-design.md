@@ -16,7 +16,7 @@ Users:
 
 - `POST /users`: legacy/public reader creation path; forces `role: reader`.
 - `GET /users`: admin-only list endpoint.
-- Admin role creation should move to a controlled script or guarded endpoint later.
+- First-admin creation runs through `npm run bootstrap:admin --workspace @bookcompass/api` with `ADMIN_EMAIL`, `ADMIN_PASSWORD`, and optional `ADMIN_DISPLAY_NAME`; it is intentionally not exposed through a public endpoint.
 
 Profiles:
 
@@ -46,7 +46,8 @@ Catalog:
 Recommendations:
 
 - Current module persists recommendation sessions only.
-- Next implementation step is service-level candidate generation and scoring using existing profile/event/DNF data.
+- Current module can build recommendation input from profile, reading events, DNF records, and catalog candidates through `RecommendationsService.buildInput`.
+- Next implementation step is service-level candidate scoring using the aggregated input.
 
 ## Access Policy
 
@@ -134,6 +135,13 @@ The deterministic engine should consume:
 - DNF records and reasons
 - catalog candidates with semantic metadata
 - decision-session context: outcome, mood, energy, focus, time, depth
+
+Day 8 aggregator baseline:
+
+- load current reading profile by user id
+- load current-reader reading events
+- load current-reader DNF records
+- load up to 50 catalog candidates filtered by selected outcome, preferred depth, and available minutes
 
 The MVP scoring output should persist:
 

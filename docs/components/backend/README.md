@@ -21,7 +21,10 @@
 - Day 7 adds reusable role metadata/guarding and protects catalog mutations plus global user/profile/event/DNF/recommendation-session list endpoints behind admin role checks.
 - Day 7 adds reader-owned behavior history reads through `GET /reading-events/me` and `GET /dnf-records/me`.
 - Day 7 enriches the repeatable seed catalog with Google Books metadata and adds book fields for subtitles, publication year, language, Google Books volume ID, and thumbnail URL.
+- Day 8 adds a controlled first-admin bootstrap script and focused backend tests for reader-owned history endpoints, admin role guarding, and admin-only catalog mutations.
+- Day 8 prepares recommendation input aggregation inside `RecommendationsService` by loading profile, reading events, DNF records, and catalog candidates for a decision context.
 - Initial catalog seed script exists at `npm run seed --workspace @bookcompass/api`.
+- First admin bootstrap script exists at `npm run bootstrap:admin --workspace @bookcompass/api` and reads `ADMIN_EMAIL`, `ADMIN_PASSWORD`, and optional `ADMIN_DISPLAY_NAME`.
 - The Day 6 manual catalog batch expands the repeatable seed to 25 authors and 27 books for local exploration.
 - Catalog enrichment plan is documented in `docs/architecture/catalog-enrichment.md`.
 
@@ -36,8 +39,8 @@ src/
   authors/              implemented: schema, DTO, service, minimal REST
   reading-events/       implemented: schema, DTO, service, reader create/history, admin list
   dnf/                  implemented: schema, DTO, service, reader create/history, admin list
-  recommendations/      implemented: session schema, DTO, service, minimal REST
-  admin/                planned
+  recommendations/      implemented: session schema, DTO, input aggregation, minimal REST
+  admin/                implemented: first-admin bootstrap script; screens planned
   analytics/            planned
   billing/              planned
 ```
@@ -127,6 +130,7 @@ Catalog list response shape:
 - `@Roles('admin')` plus `RolesGuard` protects catalog mutations and global reader-data list endpoints.
 - Frontend self-service clients should not send `userId` for profile, event, DNF, or recommendation session creation.
 - Admin ownership override and production identity provider integration are still planned.
+- First-admin bootstrap uses local environment variables and upserts an admin user directly through the API application context; it is not exposed as a public HTTP endpoint.
 
 ## Seed Data
 

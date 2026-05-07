@@ -8,6 +8,8 @@ The MVP recommendation engine is deterministic and explainable. It will live ins
 
 Day 2 added `apps/api/src/recommendations` with `RecommendationSession` storage. This is not scoring yet; it records the user's decision context and reserves structure for future candidates, score breakdowns, scoring signals, and explanation lines.
 
+Day 8 adds the first recommendation input aggregator in `RecommendationsService.buildInput`. It gathers the authenticated reader profile, reading events, DNF records, and catalog candidates filtered by selected outcome, preferred depth, and available minutes. The method deliberately does not score candidates yet; it creates the service boundary the deterministic engine will consume next.
+
 ## Inputs
 
 - reading profile
@@ -21,6 +23,13 @@ Day 2 added `apps/api/src/recommendations` with `RecommendationSession` storage.
 - focus level
 - available time
 - preferred depth
+
+Current candidate filter baseline:
+
+- `outcome = selectedOutcome`
+- `depth = preferredDepth`
+- `estimatedMinutes <= availableMinutes`
+- maximum 50 catalog candidates per aggregation call
 
 ## Scoring Layers
 

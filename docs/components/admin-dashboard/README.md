@@ -41,3 +41,10 @@ The admin dashboard makes BookCompass operationally tunable. It should help the 
 - Author/book creation endpoints require an admin JWT.
 - Public user creation is reader-only; clients cannot create admin accounts by passing `role: admin`.
 - Full admin CRUD screens, analytics, and tuning controls are still not implemented.
+
+## Day 8 Admin Bootstrap
+
+- First-admin creation now exists as a backend script, not a public endpoint.
+- Run `ADMIN_EMAIL=... ADMIN_PASSWORD=... npm run bootstrap:admin --workspace @bookcompass/api` to upsert an admin user.
+- The script also accepts optional `ADMIN_DISPLAY_NAME`.
+- Admin CRUD screens should be added after logging in with an admin JWT can be exercised locally.

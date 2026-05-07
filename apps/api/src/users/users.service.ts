@@ -49,4 +49,30 @@ export class UsersService {
   findAll() {
     return this.userModel.find().sort({ createdAt: -1 }).exec();
   }
+
+  upsertAdminByEmail(input: {
+    displayName: string;
+    email: string;
+    passwordHash: string;
+  }) {
+    return this.userModel
+      .findOneAndUpdate(
+        { email: input.email.toLowerCase().trim() },
+        {
+          $set: {
+            displayName: input.displayName,
+            email: input.email,
+            passwordHash: input.passwordHash,
+            role: 'admin',
+          },
+        },
+        {
+          returnDocument: 'after',
+          runValidators: true,
+          setDefaultsOnInsert: true,
+          upsert: true,
+        },
+      )
+      .exec();
+  }
 }

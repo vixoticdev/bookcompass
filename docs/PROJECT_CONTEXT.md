@@ -2,7 +2,7 @@
 
 This is the canonical handoff file for BookCompass.
 
-Every chat instance working on this project must read this file before making changes. The user may point new chat instances to this file so they can quickly understand the product, current status, timeline, and update rules.
+Every development session working on this project must read this file before making changes. The user may point new development sessions to this file so they can quickly understand the product, current status, timeline, and update rules.
 
 Future implementation sessions must also read and follow the MVP HLD and LLD before changing product behavior, backend contracts, frontend route boundaries, catalog policy, recommendation logic, or admin access:
 
@@ -13,7 +13,7 @@ If a future change needs to diverge from those designs, update the relevant HLD/
 
 ## Mandatory Update Rule
 
-This file must be updated every time any chat instance modifies the project.
+This file must be updated every time any development session modifies the project.
 
 Required update behavior:
 
@@ -25,8 +25,53 @@ Required update behavior:
 6. Do not remove prior day notes unless they are factually wrong; append corrections instead.
 7. Never commit secrets, connection strings, passwords, tokens, or `.env.local`.
 8. Prefer multiple semantic commits for a multi-part session instead of one large day-level commit. Group commits by coherent task or feature, such as design docs, access policy, frontend flow, catalog enrichment, tests, or runbook updates.
+9. Record the branch used for the day's work when a new daily branch is created.
 
-If a future instance changes code but does not update this file, treat that as incomplete work.
+If a future development session changes code but does not update this file, treat that as incomplete work.
+
+## Branch, Quality, Test, And Push Rules
+
+Every development session starts from a new branch for that day before implementation work begins.
+
+Branch naming convention:
+
+```text
+day<N>-YYYY-MM-DD-<short-scope>
+```
+
+Examples:
+
+- `day9-2026-05-08-recommendation-scoring`
+- `day10-2026-05-09-profile-history`
+
+Do not continue feature work directly on a prior day's branch unless the user explicitly asks to finish that branch.
+
+No sloppy code. Every meaningful code change must include unit tests that cover:
+
+- expected successful behavior
+- edge cases and boundary values
+- validation failures
+- ownership, authorization, and security boundaries
+- regressions in previously developed behavior when that behavior is touched
+
+Previously developed code is not exempt. When an old module is modified or relied on by new behavior, add or update tests for the old behavior before building on it.
+
+Before marking work complete or pushing to GitHub:
+
+1. Run relevant focused unit tests while developing.
+2. Run affected test suites intensively before final validation, including repeated targeted runs when the change touches core logic, auth, recommendation scoring, catalog mutations, persistence, or frontend route behavior.
+3. Run the full project validation gate:
+
+```bash
+npm run check
+npm run test --workspace @bookcompass/api -- --runInBand
+npm run test:e2e --workspace @bookcompass/api
+```
+
+4. Add live smoke checks when the change affects API contracts, database behavior, seed data, ingestion, auth/session flow, or frontend integration.
+5. Fix every failing test, lint issue, type error, and known regression before pushing.
+
+Push to GitHub only after all required validation succeeds and the working tree contains no unintended changes.
 
 ## Product Definition
 
@@ -171,7 +216,7 @@ Atlas note:
 
 ## Current Project State
 
-As of 2026-05-06:
+As of 2026-05-07:
 
 - Monorepo exists and is pushed to GitHub.
 - Frontend and backend can run locally.
@@ -201,7 +246,10 @@ As of 2026-05-06:
 - Backend now has reusable `@Roles(...)` metadata and `RolesGuard` for admin-only endpoints.
 - Catalog mutations and global user/profile/reading-event/DNF/recommendation-session list endpoints now require an admin JWT.
 - Public `POST /users` forces `role: reader`; clients cannot self-create admins through that legacy endpoint.
+- API has a controlled first-admin bootstrap script: `ADMIN_EMAIL=... ADMIN_PASSWORD=... npm run bootstrap:admin --workspace @bookcompass/api`.
 - Backend exposes reader-owned behavior history through `GET /reading-events/me` and `GET /dnf-records/me`.
+- Backend has focused tests covering reader-owned event/DNF history, `RolesGuard`, admin-only global list metadata, and admin-only catalog mutation metadata.
+- Project workflow now requires a new daily branch for every development session, explicit unit tests with edge-case coverage, intensive validation before completion, and GitHub pushes only after all checks pass.
 - Frontend session state hydrates from `GET /auth/me` when a local bearer token exists.
 - `/onboarding` can now update an existing authenticated profile and capture first reading behavior signals for liked, disliked, completed, saved, and DNF patterns.
 - Frontend reading identity is split across `/onboarding/signup`, `/onboarding/preferences`, and `/onboarding/signals`.
@@ -217,7 +265,8 @@ As of 2026-05-06:
 - Local Docker MongoDB was seeded with the Day 7 enriched catalog batch and verified through `GET /books` and `GET /authors`.
 - Frontend visual direction is antique retro/parchment-inspired with modern SaaS usability.
 - Production identity provider integration is not implemented yet.
-- Recommendation engine is documented; session storage exists, but scoring/candidate generation is not implemented yet.
+- Recommendation engine is documented; session storage and input aggregation exist, but scoring/ranking is not implemented yet.
+- Recommendation service can now build scoring input from profile, reading events, DNF records, and catalog candidates for a decision context.
 - Admin dashboard is documented but not implemented yet.
 - Admin CRUD screens and tuning controls are not implemented yet.
 - CI/CD is not configured yet.
@@ -270,7 +319,7 @@ Validation:
 
 ### Day 2: 2026-05-02
 
-Goal: establish continuity for multi-chat development and implement backend domain foundation.
+Goal: establish continuity for multi-session development and implement backend domain foundation.
 
 Completed:
 
@@ -521,6 +570,7 @@ Validation:
 
 - `npm run test --workspace @bookcompass/api -- --runInBand`
 - `npm run build --workspace @bookcompass/api`
+- `npm run check`
 - `npm run build --workspace @bookcompass/web`
 - `npm run check`
 - `npm run test:e2e --workspace @bookcompass/api`
@@ -540,6 +590,38 @@ Recommended Day 8 implementation target:
 - Add admin CRUD screens only after the first-admin bootstrap path exists.
 - Continue Phase 2 reading identity UX polish and add a dedicated profile/history page if the onboarding route becomes too dense.
 - Prepare the recommendation engine input aggregator from profile, reading events, DNF records, and catalog candidates.
+
+### Day 8: 2026-05-07
+
+Goal: tighten backend access-policy coverage, add first-admin bootstrap, and prepare recommendation input aggregation.
+
+Branch: `day8-2026-05-07-admin-tests-recommendation-input`
+
+Completed:
+
+- Added a controlled first-admin bootstrap script at `apps/api/src/admin/bootstrap-admin.ts`.
+- Added `npm run bootstrap:admin --workspace @bookcompass/api`, backed by `ADMIN_EMAIL`, `ADMIN_PASSWORD`, and optional `ADMIN_DISPLAY_NAME`.
+- Added `UsersService.upsertAdminByEmail` so the bootstrap script can create or rotate the first admin account without exposing public admin signup.
+- Added backend tests for `GET /reading-events/me` and `GET /dnf-records/me` reader-owned service calls.
+- Added backend tests for `RolesGuard` admin allow/reader deny behavior.
+- Added backend tests that assert admin-only role metadata on global reading event/DNF lists and author/book catalog creation endpoints.
+- Added `RecommendationsService.buildInput` to gather profile, reading events, DNF records, and catalog candidates for a recommendation decision context.
+- Updated backend, admin dashboard, recommendation engine, MVP LLD, environment example, and release documentation.
+- Updated the project operating rules to require a new daily branch for every development session, unit tests for new and touched existing behavior, edge-case coverage, intensive pre-completion validation, and GitHub pushes only after all required checks pass.
+- Confirmed project-facing documentation should not mention internal tooling names.
+
+Validation:
+
+- `npm run test --workspace @bookcompass/api -- --runInBand`
+- `npm run build --workspace @bookcompass/api`
+- `npm run check`
+
+Recommended Day 9 implementation target:
+
+- Use the Day 8 recommendation input boundary to implement first-pass deterministic candidate scoring and explanation lines.
+- Add a reader-owned recommendation history endpoint before expanding the frontend history page.
+- Add a dedicated profile/history page if onboarding continues to carry too much post-signup behavior UI.
+- Start admin CRUD screens now that first-admin bootstrap exists, beginning with guarded author/book create flows.
 
 ## Month-One Timeline
 
@@ -675,23 +757,25 @@ Output:
 
 ## Immediate Next Steps
 
-1. Add tests for reader-owned event/DNF history and admin-only global list/catalog mutation policy.
-2. Create a safe admin bootstrap path or script for the first admin user.
-3. Add admin CRUD screens only after first-admin bootstrap exists.
-4. Prepare the recommendation engine input aggregator from profile, event, DNF, and catalog data.
-5. Run the larger catalog draft ingestion only with `GOOGLE_BOOKS_API_KEY` configured and caching enabled.
+1. Implement first-pass deterministic recommendation scoring and explanation lines using the Day 8 input aggregator.
+2. Add a reader-owned recommendation history endpoint before expanding `/recommendations/history`.
+3. Add a dedicated profile/history page if onboarding continues to carry too much post-signup behavior UI.
+4. Start guarded admin author/book create screens now that the first-admin bootstrap script exists.
+5. Keep larger catalog draft ingestion behind `GOOGLE_BOOKS_API_KEY` and cached source responses.
 
-## Engineering Rules for Future Instances
+## Engineering Rules For Future Development Sessions
 
 - Read this file first.
 - Check `git status --short --branch` before editing.
+- Create or switch to that day's new branch before implementation work begins, using `day<N>-YYYY-MM-DD-<short-scope>` unless the user gives a different name.
 - Do not overwrite user changes or unrelated dirty files.
 - Use `rg`/`rg --files` for search.
 - Use `apply_patch` for manual edits.
 - Keep secrets out of Git.
 - Update docs as part of the same change.
-- Run focused validation after changes.
-- Commit and push when the user asks, or when the work clearly needs to be shared across chat instances.
+- Add or update unit tests for every meaningful change, including edge cases and touched existing behavior.
+- Run focused validation during development, then run the full validation gate before completion.
+- Push to GitHub only after all required tests, builds, lint checks, and relevant smoke checks succeed.
 - For future multi-part work, make semantic commits as each coherent task is completed and validated. Avoid bundling an entire day of unrelated backend, frontend, tooling, and documentation changes into one commit.
 - Keep the product SaaS-grade: schemas, validation, explanations, and admin operations matter.
 
