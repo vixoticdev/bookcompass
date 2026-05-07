@@ -2,6 +2,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   createAuthor,
   createBook,
+  deleteAuthor,
+  deleteBook,
   createRecommendationSession,
   createReadingProfile,
   createDnfRecord,
@@ -16,6 +18,8 @@ import {
   listAuthors,
   listBooks,
   signup,
+  updateAuthor,
+  updateBook,
   updateMyReadingProfile,
   type AuthInput,
   type CreateAuthorInput,
@@ -26,6 +30,8 @@ import {
   type RecommendationFeedbackStatus,
   type ReadingEventInput,
   type SignupInput,
+  type UpdateAuthorInput,
+  type UpdateBookInput,
 } from './api';
 
 export function useAuthors(params: Parameters<typeof listAuthors>[0] = {}) {
@@ -200,6 +206,31 @@ export function useCreateAuthor() {
   });
 }
 
+export function useUpdateAuthor() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: { authorId: string; body: UpdateAuthorInput }) =>
+      updateAuthor(input),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['authors'] });
+      void queryClient.invalidateQueries({ queryKey: ['books'] });
+    },
+  });
+}
+
+export function useDeleteAuthor() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (authorId: string) => deleteAuthor(authorId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['authors'] });
+      void queryClient.invalidateQueries({ queryKey: ['books'] });
+    },
+  });
+}
+
 export function useCreateBook() {
   const queryClient = useQueryClient();
 
@@ -207,6 +238,35 @@ export function useCreateBook() {
     mutationFn: (input: CreateBookInput) => createBook(input),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['books'] });
+    },
+  });
+}
+
+export function useUpdateBook() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: { bookId: string; body: UpdateBookInput }) =>
+      updateBook(input),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['books'] });
+      void queryClient.invalidateQueries({
+        queryKey: ['recommendation-sessions', 'me'],
+      });
+    },
+  });
+}
+
+export function useDeleteBook() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (bookId: string) => deleteBook(bookId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['books'] });
+      void queryClient.invalidateQueries({
+        queryKey: ['recommendation-sessions', 'me'],
+      });
     },
   });
 }
