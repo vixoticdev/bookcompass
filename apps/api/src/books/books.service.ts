@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import {
@@ -8,6 +8,7 @@ import {
 } from '../catalog/catalog-query';
 import { CreateBookDto } from './dto/create-book.dto';
 import { ListBooksQueryDto } from './dto/list-books-query.dto';
+import { UpdateBookDto } from './dto/update-book.dto';
 import { Book } from './schemas/book.schema';
 
 export function buildBookFilters(query: ListBooksQueryDto) {
@@ -62,6 +63,16 @@ export class BooksService {
     return this.bookModel.create(createBookDto);
   }
 
+  async findById(bookId: string) {
+    const book = await this.bookModel.findById(bookId).exec();
+
+    if (!book) {
+      throw new NotFoundException('Book not found.');
+    }
+
+    return book;
+  }
+
   async findAll(query: ListBooksQueryDto = {}): Promise<CatalogPage<Book>> {
     const filters = buildBookFilters(query);
     const { limit, offset } = normalizeCatalogPagination(query);
@@ -91,5 +102,31 @@ export class BooksService {
         },
       )
       .exec();
+  }
+
+  async updateById(bookId: string, updateBookDto: UpdateBookDto) {
+    const book = await this.bookModel
+      .findByIdAndUpdate(
+        bookId,
+        { $set: updateBookDto },
+        { new: true, runValidators: true },
+      )
+      .exec();
+
+    if (!book) {
+      throw new NotFoundException('Book not found.');
+    }
+
+    return book;
+  }
+
+  async deleteById(bookId: string) {
+    const book = await this.bookModel.findByIdAndDelete(bookId).exec();
+
+    if (!book) {
+      throw new NotFoundException('Book not found.');
+    }
+
+    return book;
   }
 }

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import {
@@ -8,6 +8,7 @@ import {
 } from '../catalog/catalog-query';
 import { CreateAuthorDto } from './dto/create-author.dto';
 import { ListAuthorsQueryDto } from './dto/list-authors-query.dto';
+import { UpdateAuthorDto } from './dto/update-author.dto';
 import { Author } from './schemas/author.schema';
 
 export function buildAuthorFilters(query: ListAuthorsQueryDto) {
@@ -36,6 +37,16 @@ export class AuthorsService {
 
   create(createAuthorDto: CreateAuthorDto) {
     return this.authorModel.create(createAuthorDto);
+  }
+
+  async findById(authorId: string) {
+    const author = await this.authorModel.findById(authorId).exec();
+
+    if (!author) {
+      throw new NotFoundException('Author not found.');
+    }
+
+    return author;
   }
 
   async findAll(query: ListAuthorsQueryDto = {}): Promise<CatalogPage<Author>> {
@@ -67,5 +78,31 @@ export class AuthorsService {
         },
       )
       .exec();
+  }
+
+  async updateById(authorId: string, updateAuthorDto: UpdateAuthorDto) {
+    const author = await this.authorModel
+      .findByIdAndUpdate(
+        authorId,
+        { $set: updateAuthorDto },
+        { new: true, runValidators: true },
+      )
+      .exec();
+
+    if (!author) {
+      throw new NotFoundException('Author not found.');
+    }
+
+    return author;
+  }
+
+  async deleteById(authorId: string) {
+    const author = await this.authorModel.findByIdAndDelete(authorId).exec();
+
+    if (!author) {
+      throw new NotFoundException('Author not found.');
+    }
+
+    return author;
   }
 }

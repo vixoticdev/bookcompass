@@ -4,17 +4,26 @@ import { RolesGuard } from '../auth/roles.guard';
 import { AuthorsController } from './authors.controller';
 
 describe('AuthorsController', () => {
-  it('marks catalog creation as admin guarded', () => {
-    const createHandler = Object.getOwnPropertyDescriptor(
+  function expectAdminGuard(methodName: keyof AuthorsController) {
+    const handler = Object.getOwnPropertyDescriptor(
       AuthorsController.prototype,
-      'create',
+      methodName,
     )?.value as object;
-    const guards = Reflect.getMetadata(
-      GUARDS_METADATA,
-      createHandler,
-    ) as unknown[];
+    const guards = Reflect.getMetadata(GUARDS_METADATA, handler) as unknown[];
 
     expect(guards).toContain(RolesGuard);
-    expect(Reflect.getMetadata(ROLES_KEY, createHandler)).toEqual(['admin']);
+    expect(Reflect.getMetadata(ROLES_KEY, handler)).toEqual(['admin']);
+  }
+
+  it('marks catalog creation as admin guarded', () => {
+    expectAdminGuard('create');
+  });
+
+  it('marks catalog updates as admin guarded', () => {
+    expectAdminGuard('update');
+  });
+
+  it('marks catalog deletion as admin guarded', () => {
+    expectAdminGuard('remove');
   });
 });
