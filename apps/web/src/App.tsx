@@ -35,9 +35,13 @@ import {
   useMyRecommendationSessions,
   useMyReadingEvents,
   useMyReadingProfile,
+  useRecordRecommendationFeedback,
   useUpdateMyReadingProfile,
 } from './lib/queries'
-import type { RecommendationSession } from './lib/api'
+import type {
+  RecommendationFeedbackStatus,
+  RecommendationSession,
+} from './lib/api'
 
 const routes = [
   { to: '/login', label: 'Login', icon: UserRound },
@@ -117,6 +121,14 @@ const formatOptions = [
   ['paperback', 'Paperback'],
   ['hardcover', 'Hardcover'],
   ['audiobook', 'Audiobook'],
+]
+
+const feedbackActions: Array<[RecommendationFeedbackStatus, string]> = [
+  ['accepted', 'Accept'],
+  ['rejected', 'Reject'],
+  ['started', 'Started'],
+  ['completed', 'Completed'],
+  ['abandoned', 'Abandoned'],
 ]
 
 function toList(value: string) {
@@ -1104,6 +1116,18 @@ function RecommendationSessionCard({
   session: RecommendationSession
 }) {
   const topCandidates = session.candidates.slice(0, 3)
+  const recordFeedback = useRecordRecommendationFeedback()
+
+  function handleFeedback(
+    bookId: string,
+    status: RecommendationFeedbackStatus,
+  ) {
+    recordFeedback.mutate({
+      bookId,
+      sessionId: session._id,
+      status,
+    })
+  }
 
   return (
     <section className="rounded-md border border-[#d8cbb8] bg-[#fffaf0] p-5">
@@ -1143,9 +1167,37 @@ function RecommendationSessionCard({
                 <p key={line}>{line}</p>
               ))}
             </div>
+            <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-[#eee4d6] pt-3">
+              {feedbackActions.map(([status, label]) => (
+                <button
+                  className={[
+                    'inline-flex h-9 items-center rounded-md border px-3 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60',
+                    candidate.feedback?.status === status
+                      ? 'border-[#315d48] bg-[#e5eee7] text-[#20372d]'
+                      : 'border-[#d8cbb8] bg-white/70 text-[#5c4f40] hover:border-[#315d48]',
+                  ].join(' ')}
+                  disabled={recordFeedback.isPending}
+                  key={status}
+                  onClick={() => handleFeedback(candidate.bookId, status)}
+                  type="button"
+                >
+                  {label}
+                </button>
+              ))}
+              {candidate.feedback ? (
+                <span className="text-xs font-semibold uppercase text-[#8a602b]">
+                  Last marked {candidate.feedback.status}
+                </span>
+              ) : null}
+            </div>
           </article>
         ))}
       </div>
+      {recordFeedback.isError ? (
+        <StatusMessage tone="error">
+          Could not save recommendation feedback. Login again and retry.
+        </StatusMessage>
+      ) : null}
     </section>
   )
 }

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import type { RecommendationSignal } from '@bookcompass/shared';
@@ -7,6 +7,7 @@ import { DnfService } from '../dnf/dnf.service';
 import { ProfilesService } from '../profiles/profiles.service';
 import { ReadingEventsService } from '../reading-events/reading-events.service';
 import { CreateRecommendationSessionDto } from './dto/create-recommendation-session.dto';
+import { RecordRecommendationFeedbackDto } from './dto/record-recommendation-feedback.dto';
 import { RecommendationSession } from './schemas/recommendation-session.schema';
 
 type ScoreableBook = {
@@ -99,6 +100,54 @@ export class RecommendationsService {
       .find({ userId })
       .sort({ createdAt: -1 })
       .exec();
+  }
+
+  async recordFeedback(
+    userId: string,
+    sessionId: string,
+    feedbackDto: RecordRecommendationFeedbackDto,
+  ) {
+    const recordedAt = new Date();
+    const session = await this.recommendationSessionModel
+      .findOneAndUpdate(
+        {
+          _id: sessionId,
+          userId,
+          'candidates.bookId': feedbackDto.bookId,
+        },
+        {
+          $set: {
+            status: 'feedback-recorded',
+            'candidates.$.feedback': {
+              status: feedbackDto.status,
+              progressPercent: feedbackDto.progressPercent,
+              note: feedbackDto.note,
+              recordedAt,
+            },
+          },
+        },
+        { returnDocument: 'after' },
+      )
+      .exec();
+
+    if (!session) {
+      throw new NotFoundException('Recommendation candidate was not found');
+    }
+
+    const eventType = this.toReadingEventType(feedbackDto.status);
+    if (eventType) {
+      await this.readingEventsService.create({
+        userId,
+        bookId: feedbackDto.bookId,
+        eventType,
+        progressPercent:
+          feedbackDto.progressPercent ?? this.defaultProgress(eventType),
+        note: feedbackDto.note,
+        occurredAt: recordedAt,
+      });
+    }
+
+    return session;
   }
 
   async buildInput(
@@ -521,5 +570,29 @@ export class RecommendationsService {
 
   private getBookId(book: ScoreableBook) {
     return String(book._id ?? book.id);
+  }
+
+  private toReadingEventType(feedbackStatus: string) {
+    const feedbackToEvent: Record<string, string> = {
+      accepted: 'saved',
+      rejected: 'disliked',
+      started: 'started',
+      completed: 'completed',
+      abandoned: 'abandoned',
+    };
+
+    return feedbackToEvent[feedbackStatus];
+  }
+
+  private defaultProgress(eventType: string) {
+    if (eventType === 'completed') {
+      return 100;
+    }
+
+    if (eventType === 'started') {
+      return 1;
+    }
+
+    return undefined;
   }
 }

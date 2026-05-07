@@ -47,9 +47,11 @@ Recommendations:
 
 - `POST /recommendation-sessions`: authenticated self-service create; derives `userId`, builds recommendation input, scores candidates, and persists the ranked session.
 - `GET /recommendation-sessions/me`: authenticated current-reader recommendation history.
+- `POST /recommendation-sessions/:sessionId/feedback`: authenticated current-reader feedback capture for a scored candidate.
 - `GET /recommendation-sessions`: admin-only global list.
 - Current module can build recommendation input from profile, reading events, DNF records, and catalog candidates through `RecommendationsService.buildInput`.
 - Current module scores candidates through deterministic outcome, profile, context, time, behavior, and anti-DNF signals.
+- Current module records feedback only when the session belongs to the authenticated reader and the book id is present in the session candidates.
 
 ## Access Policy
 
@@ -130,6 +132,13 @@ Recommendation session:
 3. API persists the top ranked scored candidates with score breakdowns, signals, and explanation lines.
 4. Web reads `GET /recommendation-sessions/me` for reader-owned history.
 
+Recommendation feedback:
+
+1. Web posts candidate feedback to `POST /recommendation-sessions/:sessionId/feedback`.
+2. API verifies the session belongs to the authenticated reader and includes the candidate book.
+3. API stores candidate-level feedback with status, optional progress/note, and timestamp.
+4. API writes a reusable reading event: accepted becomes saved, rejected becomes disliked, and started/completed/abandoned map directly.
+
 Catalog ingestion:
 
 1. Open Library candidate search by genre.
@@ -163,6 +172,7 @@ The MVP scoring output persists:
 - positive signals
 - risk signals
 - explanation lines
+- candidate feedback after the reader acts on a suggestion
 
 ## Testing Priorities
 

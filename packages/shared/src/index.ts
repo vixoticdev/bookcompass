@@ -27,6 +27,16 @@ export const READING_EVENT_TYPES = [
 ] as const;
 export type ReadingEventType = (typeof READING_EVENT_TYPES)[number];
 
+export const RECOMMENDATION_FEEDBACK_STATUSES = [
+  'accepted',
+  'rejected',
+  'started',
+  'completed',
+  'abandoned',
+] as const;
+export type RecommendationFeedbackStatus =
+  (typeof RECOMMENDATION_FEEDBACK_STATUSES)[number];
+
 export const READING_STATUSES = [
   'want-to-read',
   'reading',

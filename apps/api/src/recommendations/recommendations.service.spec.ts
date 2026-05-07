@@ -16,11 +16,13 @@ describe('RecommendationsService', () => {
   const recommendationSessionModel = {
     create: jest.fn(),
     find: jest.fn(),
+    findOneAndUpdate: jest.fn(),
   };
   const profilesService = {
     findByUserId: jest.fn(),
   };
   const readingEventsService = {
+    create: jest.fn(),
     findByUserId: jest.fn(),
   };
   const dnfService = {
@@ -36,6 +38,9 @@ describe('RecommendationsService', () => {
     jest.clearAllMocks();
     recommendationSessionModel.find.mockReturnValue({
       sort: jest.fn().mockReturnValue({ exec: jest.fn() }),
+    });
+    recommendationSessionModel.findOneAndUpdate.mockReturnValue({
+      exec: jest.fn(),
     });
     service = new RecommendationsService(
       recommendationSessionModel as never,
@@ -254,5 +259,76 @@ describe('RecommendationsService', () => {
       { userId: 'user-1' },
     ]);
     expect(sort.mock.calls[0]).toEqual([{ createdAt: -1 }]);
+  });
+
+  it('records feedback on a reader-owned candidate and creates a reusable behavior event', async () => {
+    const updatedSession = {
+      _id: '507f1f77bcf86cd799439011',
+      status: 'feedback-recorded',
+    };
+    const exec = jest.fn().mockResolvedValue(updatedSession);
+    recommendationSessionModel.findOneAndUpdate.mockReturnValue({ exec });
+    readingEventsService.create.mockResolvedValue({ _id: 'event-1' });
+
+    await expect(
+      service.recordFeedback(
+        '507f1f77bcf86cd799439012',
+        '507f1f77bcf86cd799439011',
+        {
+          bookId: '507f1f77bcf86cd799439013',
+          status: 'completed',
+          note: 'Good match',
+        },
+      ),
+    ).resolves.toBe(updatedSession);
+
+    const updateCall = recommendationSessionModel.findOneAndUpdate.mock
+      .calls[0] as [
+      Record<string, unknown>,
+      { $set: Record<string, unknown> },
+      Record<string, unknown>,
+    ];
+    expect(updateCall[0]).toEqual({
+      _id: '507f1f77bcf86cd799439011',
+      userId: '507f1f77bcf86cd799439012',
+      'candidates.bookId': '507f1f77bcf86cd799439013',
+    });
+    expect(updateCall[1].$set.status).toBe('feedback-recorded');
+    expect(updateCall[1].$set['candidates.$.feedback']).toMatchObject({
+      status: 'completed',
+      progressPercent: undefined,
+      note: 'Good match',
+      recordedAt: expect.any(Date) as Date,
+    });
+    expect(updateCall[2]).toEqual({ returnDocument: 'after' });
+    const readingEventCreateCalls = readingEventsService.create.mock
+      .calls as Array<[Record<string, unknown>]>;
+    const createdEvent = readingEventCreateCalls[0][0];
+    expect(createdEvent).toEqual(
+      expect.objectContaining({
+        userId: '507f1f77bcf86cd799439012',
+        bookId: '507f1f77bcf86cd799439013',
+        eventType: 'completed',
+        progressPercent: 100,
+        note: 'Good match',
+      }),
+    );
+  });
+
+  it('rejects feedback for sessions or candidates outside the reader ownership boundary', async () => {
+    const exec = jest.fn().mockResolvedValue(null);
+    recommendationSessionModel.findOneAndUpdate.mockReturnValue({ exec });
+
+    await expect(
+      service.recordFeedback(
+        '507f1f77bcf86cd799439012',
+        '507f1f77bcf86cd799439011',
+        {
+          bookId: '507f1f77bcf86cd799439013',
+          status: 'accepted',
+        },
+      ),
+    ).rejects.toThrow('Recommendation candidate was not found');
+    expect(readingEventsService.create).not.toHaveBeenCalled();
   });
 });
