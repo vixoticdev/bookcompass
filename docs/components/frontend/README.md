@@ -123,6 +123,12 @@ Day 7 route split:
 - `/onboarding/signals` handles reading event and DNF capture.
 - `/onboarding/signals` reads `GET /reading-events/me` and `GET /dnf-records/me` to show the current reader's captured behavior history.
 
+Day 9 recommendation and admin routes:
+
+- `/recommendations/new` now creates a scored recommendation session from outcome, mood, energy, focus, available minutes, and depth.
+- `/recommendations/history` reads `GET /recommendation-sessions/me` and displays the latest scored candidates with explanation lines.
+- `/admin/books` now includes first-pass guarded create forms for authors and books, backed by admin-only `POST /authors` and `POST /books`.
+
 Browser metadata:
 
 - The browser tab favicon uses `public/bookcompass-icon.png`.
@@ -143,6 +149,10 @@ Browser metadata:
 - `GET /reading-events/me`
 - `POST /dnf-records`
 - `GET /dnf-records/me`
+- `POST /recommendation-sessions`
+- `GET /recommendation-sessions/me`
+- admin-only `POST /authors`
+- admin-only `POST /books`
 
 ## Documentation Rule
 

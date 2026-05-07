@@ -23,6 +23,7 @@
 - Day 7 enriches the repeatable seed catalog with Google Books metadata and adds book fields for subtitles, publication year, language, Google Books volume ID, and thumbnail URL.
 - Day 8 adds a controlled first-admin bootstrap script and focused backend tests for reader-owned history endpoints, admin role guarding, and admin-only catalog mutations.
 - Day 8 prepares recommendation input aggregation inside `RecommendationsService` by loading profile, reading events, DNF records, and catalog candidates for a decision context.
+- Day 9 adds first-pass deterministic recommendation scoring and reader-owned recommendation history through `GET /recommendation-sessions/me`.
 - Initial catalog seed script exists at `npm run seed --workspace @bookcompass/api`.
 - First admin bootstrap script exists at `npm run bootstrap:admin --workspace @bookcompass/api` and reads `ADMIN_EMAIL`, `ADMIN_PASSWORD`, and optional `ADMIN_DISPLAY_NAME`.
 - The Day 6 manual catalog batch expands the repeatable seed to 25 authors and 27 books for local exploration.
@@ -39,7 +40,7 @@ src/
   authors/              implemented: schema, DTO, service, minimal REST
   reading-events/       implemented: schema, DTO, service, reader create/history, admin list
   dnf/                  implemented: schema, DTO, service, reader create/history, admin list
-  recommendations/      implemented: session schema, DTO, input aggregation, minimal REST
+  recommendations/      implemented: session schema, DTO, input aggregation, deterministic scoring, reader history, minimal REST
   admin/                implemented: first-admin bootstrap script; screens planned
   analytics/            planned
   billing/              planned
@@ -54,7 +55,7 @@ src/
 - admin-only `POST /books`, `GET /books`
 - `POST /reading-events`, `GET /reading-events/me`, admin-only `GET /reading-events`
 - `POST /dnf-records`, `GET /dnf-records/me`, admin-only `GET /dnf-records`
-- `POST /recommendation-sessions`, admin-only `GET /recommendation-sessions`
+- `POST /recommendation-sessions`, `GET /recommendation-sessions/me`, admin-only `GET /recommendation-sessions`
 
 These endpoints are intentionally thin foundation write/read paths. Self-service write endpoints for profiles, reading events, DNF records, and recommendation sessions require a bearer token and derive ownership from the authenticated request. Catalog reads remain open for local MVP exploration; catalog mutations and global reader data lists now require an admin role.
 
@@ -65,6 +66,7 @@ Profile ownership:
 - `PATCH /profiles/me` updates only the authenticated reader profile and does not accept `userId`.
 - Missing current profiles return `404` so the frontend can create the first profile for an authenticated user.
 - `GET /reading-events/me` and `GET /dnf-records/me` return only the authenticated reader's behavior history.
+- `GET /recommendation-sessions/me` returns only the authenticated reader's scored recommendation sessions.
 - Public `POST /users` forces `role: reader`; admin creation must not be exposed through self-service signup.
 
 Catalog filters added on Day 3 and paginated on Day 4:

@@ -234,7 +234,7 @@ As of 2026-05-07:
 - API seed script exists for authors/books: `npm run seed --workspace @bookcompass/api`.
 - API seed script now includes a manually reviewed Day 6 catalog expansion with 25 authors and 27 books total for local exploration.
 - API seed script now includes Day 7 Google Books enrichment for 20 of the 27 seeded books, with 14 thumbnail-backed records.
-- Frontend app shell routes exist for onboarding, library, recommendation start/history, and admin placeholders.
+- Frontend app shell routes exist for onboarding, library, recommendation start/history, and admin.
 - Frontend has an API client and React Query hooks for books, authors, and reader identity creation.
 - Frontend browser tab uses the BookCompass PNG icon at `apps/web/public/bookcompass-icon.png` and the page title is `BookCompass`.
 - `/library` and `/admin/books` read live catalog data from the API.
@@ -248,12 +248,17 @@ As of 2026-05-07:
 - Public `POST /users` forces `role: reader`; clients cannot self-create admins through that legacy endpoint.
 - API has a controlled first-admin bootstrap script: `ADMIN_EMAIL=... ADMIN_PASSWORD=... npm run bootstrap:admin --workspace @bookcompass/api`.
 - Backend exposes reader-owned behavior history through `GET /reading-events/me` and `GET /dnf-records/me`.
+- Backend exposes reader-owned recommendation history through `GET /recommendation-sessions/me`.
+- `POST /recommendation-sessions` now builds recommendation input, scores catalog candidates deterministically, persists the top ranked candidates, and marks sessions `scored`.
 - Backend has focused tests covering reader-owned event/DNF history, `RolesGuard`, admin-only global list metadata, and admin-only catalog mutation metadata.
 - Project workflow now requires a new daily branch for every development session, explicit unit tests with edge-case coverage, intensive validation before completion, and GitHub pushes only after all checks pass.
 - Frontend session state hydrates from `GET /auth/me` when a local bearer token exists.
 - `/onboarding` can now update an existing authenticated profile and capture first reading behavior signals for liked, disliked, completed, saved, and DNF patterns.
 - Frontend reading identity is split across `/onboarding/signup`, `/onboarding/preferences`, and `/onboarding/signals`.
 - `/onboarding/signals` now displays reader-owned reading event and DNF history.
+- `/recommendations/new` now creates scored recommendation sessions from current decision context.
+- `/recommendations/history` now displays authenticated reader recommendation sessions and explanation lines.
+- `/admin/books` now has guarded author and book create forms backed by admin-only `POST /authors` and `POST /books`.
 - Catalog enrichment plan is documented in `docs/architecture/catalog-enrichment.md`.
 - MVP HLD and LLD are documented in `docs/architecture/mvp-high-level-design.md` and `docs/architecture/mvp-low-level-design.md`.
 - Catalog ingestion scaffold exists in `tools/catalog-ingestion` for a 1,000-book mixed-genre draft catalog using Open Library discovery plus Google Books enrichment.
@@ -265,13 +270,13 @@ As of 2026-05-07:
 - Local Docker MongoDB was seeded with the Day 7 enriched catalog batch and verified through `GET /books` and `GET /authors`.
 - Frontend visual direction is antique retro/parchment-inspired with modern SaaS usability.
 - Production identity provider integration is not implemented yet.
-- Recommendation engine is documented; session storage and input aggregation exist, but scoring/ranking is not implemented yet.
+- Recommendation engine is documented; session storage, input aggregation, first-pass scoring/ranking, score breakdowns, signals, and explanation lines exist.
 - Recommendation service can now build scoring input from profile, reading events, DNF records, and catalog candidates for a decision context.
-- Admin dashboard is documented but not implemented yet.
-- Admin CRUD screens and tuning controls are not implemented yet.
+- Admin dashboard is documented; first-pass author/book create screens exist inside `/admin/books`.
+- Admin edit/delete screens and tuning controls are not implemented yet.
 - CI/CD is not configured yet.
 
-Important uncommitted context:
+Important historical context:
 
 - `docs/components/recommendation-engine/README.md` had research/data reference additions before this file was created. Do not overwrite those changes accidentally.
 
@@ -623,6 +628,40 @@ Recommended Day 9 implementation target:
 - Add a dedicated profile/history page if onboarding continues to carry too much post-signup behavior UI.
 - Start admin CRUD screens now that first-admin bootstrap exists, beginning with guarded author/book create flows.
 
+### Day 9: 2026-05-07
+
+Goal: implement first-pass recommendation scoring, reader recommendation history, and initial guarded admin catalog create flows.
+
+Branch: `day9-2026-05-07-recommendation-scoring`
+
+Completed:
+
+- Added deterministic recommendation scoring to `RecommendationsService.create`.
+- Scoring now uses outcome fit, profile fit, current context, time fit, behavior history, and anti-DNF risk.
+- Persisted ranked recommendation candidates with final score, score breakdown, scoring signals, and explanation lines.
+- Added reader-owned `GET /recommendation-sessions/me`.
+- Added focused recommendation service tests for ranked scoring, explanation output, direct DNF penalty behavior, and reader-owned history.
+- Added recommendation controller tests for `/me` reader ownership and admin-only global list metadata.
+- Wired `/recommendations/new` to create scored sessions from live decision context.
+- Wired `/recommendations/history` to display the authenticated reader's scored sessions and explanation lines.
+- Added first-pass guarded author/book create forms to `/admin/books`.
+- Updated backend, frontend, admin dashboard, recommendation engine, and MVP LLD documentation.
+
+Validation:
+
+- `npm run test --workspace @bookcompass/api -- recommendations --runInBand`
+- `npm run check`
+- `npm run test --workspace @bookcompass/api -- --runInBand`
+- `npm run test:e2e --workspace @bookcompass/api`
+- `MONGODB_URI=mongodb://localhost:27017/bookcompass npm run seed --workspace @bookcompass/api`
+- Live Docker MongoDB API smoke for signup, profile creation, `POST /recommendation-sessions`, and `GET /recommendation-sessions/me`
+
+Recommended Day 10 implementation target:
+
+- Add recommendation feedback capture for accepted/rejected/started/completed/abandoned suggestions.
+- Expand admin catalog operations with edit/delete and a dedicated author management route.
+- Add a dedicated reader profile/history route if onboarding remains too dense.
+
 ## Month-One Timeline
 
 ### Phase 1: Foundation
@@ -757,10 +796,10 @@ Output:
 
 ## Immediate Next Steps
 
-1. Implement first-pass deterministic recommendation scoring and explanation lines using the Day 8 input aggregator.
-2. Add a reader-owned recommendation history endpoint before expanding `/recommendations/history`.
+1. Add recommendation feedback capture for accepted, rejected, started, completed, and abandoned suggestions.
+2. Expand admin catalog operations with edit/delete and a dedicated author management route.
 3. Add a dedicated profile/history page if onboarding continues to carry too much post-signup behavior UI.
-4. Start guarded admin author/book create screens now that the first-admin bootstrap script exists.
+4. Add richer catalog metadata review fields for anti-DNF tuning.
 5. Keep larger catalog draft ingestion behind `GOOGLE_BOOKS_API_KEY` and cached source responses.
 
 ## Engineering Rules For Future Development Sessions
