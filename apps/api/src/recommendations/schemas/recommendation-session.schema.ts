@@ -4,6 +4,7 @@ import {
   MOOD_KEYS,
   OUTCOME_KEYS,
   READING_DEPTHS,
+  RECOMMENDATION_FEEDBACK_STATUSES,
 } from '@bookcompass/shared';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Schema as MongooseSchema } from 'mongoose';
@@ -37,6 +38,25 @@ export const RecommendationContextSchema = SchemaFactory.createForClass(
 );
 
 @Schema({ _id: false })
+export class RecommendationFeedback {
+  @Prop({ enum: RECOMMENDATION_FEEDBACK_STATUSES, required: true })
+  status: string;
+
+  @Prop({ min: 0, max: 100 })
+  progressPercent?: number;
+
+  @Prop({ maxlength: 2000 })
+  note?: string;
+
+  @Prop({ required: true })
+  recordedAt: Date;
+}
+
+export const RecommendationFeedbackSchema = SchemaFactory.createForClass(
+  RecommendationFeedback,
+);
+
+@Schema({ _id: false })
 export class RecommendationCandidate {
   @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'Book', required: true })
   bookId: string;
@@ -52,6 +72,9 @@ export class RecommendationCandidate {
 
   @Prop({ type: [String], default: [] })
   explanation: string[];
+
+  @Prop({ type: RecommendationFeedbackSchema })
+  feedback?: RecommendationFeedback;
 }
 
 export const RecommendationCandidateSchema = SchemaFactory.createForClass(

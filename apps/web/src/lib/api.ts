@@ -165,6 +165,7 @@ export type RecommendationCandidate = {
   scoreBreakdown: Record<string, number>;
   signals: RecommendationSignal[];
   explanation: string[];
+  feedback?: RecommendationFeedback;
 };
 
 export type RecommendationSession = {
@@ -175,6 +176,20 @@ export type RecommendationSession = {
   status: string;
   createdAt?: string;
   updatedAt?: string;
+};
+
+export type RecommendationFeedbackStatus =
+  | 'accepted'
+  | 'rejected'
+  | 'started'
+  | 'completed'
+  | 'abandoned';
+
+export type RecommendationFeedback = {
+  status: RecommendationFeedbackStatus;
+  progressPercent?: number;
+  note?: string;
+  recordedAt: string;
 };
 
 export class ApiError extends Error {
@@ -372,6 +387,26 @@ export function createRecommendationSession(input: {
 export function listMyRecommendationSessions() {
   return axiosInstance
     .get<RecommendationSession[]>('/recommendation-sessions/me')
+    .then((response) => response.data)
+    .catch((error: unknown) => {
+      throw toApiError(error);
+    });
+}
+
+export function recordRecommendationFeedback(input: {
+  sessionId: string;
+  bookId: string;
+  status: RecommendationFeedbackStatus;
+  progressPercent?: number;
+  note?: string;
+}) {
+  const { sessionId, ...body } = input;
+
+  return axiosInstance
+    .post<RecommendationSession>(
+      `/recommendation-sessions/${sessionId}/feedback`,
+      body,
+    )
     .then((response) => response.data)
     .catch((error: unknown) => {
       throw toApiError(error);

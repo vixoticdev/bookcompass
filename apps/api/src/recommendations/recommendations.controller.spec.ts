@@ -9,6 +9,7 @@ describe('RecommendationsController', () => {
     create: jest.fn(),
     findAll: jest.fn(),
     findByUserId: jest.fn(),
+    recordFeedback: jest.fn(),
   } as unknown as jest.Mocked<RecommendationsService>;
   const currentUser = {
     id: '507f1f77bcf86cd799439011',
@@ -37,6 +38,31 @@ describe('RecommendationsController', () => {
     await expect(controller.findMine(currentUser)).resolves.toBe(sessions);
     expect(recommendationsService.findByUserId.mock.calls[0]).toEqual([
       currentUser.id,
+    ]);
+  });
+
+  it('records feedback through the authenticated reader ownership boundary', async () => {
+    const session = {
+      _id: '507f1f77bcf86cd799439011',
+      status: 'feedback-recorded',
+    };
+    const feedback = {
+      bookId: '507f1f77bcf86cd799439013',
+      status: 'started',
+    };
+    recommendationsService.recordFeedback.mockResolvedValue(session as never);
+
+    await expect(
+      controller.recordFeedback(
+        '507f1f77bcf86cd799439011',
+        feedback,
+        currentUser,
+      ),
+    ).resolves.toBe(session);
+    expect(recommendationsService.recordFeedback.mock.calls[0]).toEqual([
+      currentUser.id,
+      '507f1f77bcf86cd799439011',
+      feedback,
     ]);
   });
 

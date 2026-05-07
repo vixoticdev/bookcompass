@@ -12,6 +12,7 @@ import {
   listMyRecommendationSessions,
   listMyReadingEvents,
   login,
+  recordRecommendationFeedback,
   listAuthors,
   listBooks,
   signup,
@@ -22,6 +23,7 @@ import {
   type CreateReadingProfileInput,
   type DnfRecordInput,
   type RecommendationContext,
+  type RecommendationFeedbackStatus,
   type ReadingEventInput,
   type SignupInput,
 } from './api';
@@ -166,6 +168,24 @@ export function useMyRecommendationSessions() {
       typeof window !== 'undefined' &&
       Boolean(window.localStorage.getItem('bookcompass.accessToken')),
     retry: false,
+  });
+}
+
+export function useRecordRecommendationFeedback() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: {
+      sessionId: string;
+      bookId: string;
+      status: RecommendationFeedbackStatus;
+    }) => recordRecommendationFeedback(input),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: ['recommendation-sessions', 'me'],
+      });
+      void queryClient.invalidateQueries({ queryKey: ['reading-events', 'me'] });
+    },
   });
 }
 
