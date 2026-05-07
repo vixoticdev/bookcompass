@@ -63,7 +63,7 @@ npm run test:e2e --workspace @bookcompass/api
 
 ## Commit Rule
 
-Future multi-part sessions should use multiple semantic commits instead of one broad day-level commit. Commit by coherent task or feature, for example:
+Multi-part work must use multiple semantic commits instead of one broad day-level commit. This applies even when all tasks happen inside a single development session. Commit by coherent task or feature, for example:
 
 - design docs
 - access policy
