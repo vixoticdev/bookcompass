@@ -2,7 +2,7 @@
 
 ## Scope
 
-Created a canonical project context and timeline document for multi-chat continuity.
+Created a canonical project context and timeline document for multi-session continuity.
 
 ## Added
 
@@ -11,7 +11,7 @@ Created a canonical project context and timeline document for multi-chat continu
 
 ## Rule Added
 
-Every future chat instance that modifies the project must update `docs/PROJECT_CONTEXT.md` with a dated entry and adjust current state or next steps when relevant.
+Every future development session that modifies the project must update `docs/PROJECT_CONTEXT.md` with a dated entry and adjust current state or next steps when relevant.
 
 ## Validation
 
