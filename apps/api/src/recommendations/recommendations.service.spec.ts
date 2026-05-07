@@ -89,6 +89,7 @@ describe('RecommendationsService', () => {
         outcome: 'productivity',
         depth: 'deep',
         maxEstimatedMinutes: 420,
+        recommendationEligible: true,
         limit: 50,
         offset: 0,
       },

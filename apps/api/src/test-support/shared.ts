@@ -48,3 +48,9 @@ export const BOOK_FORMATS = [
 ] as const;
 export const BOOK_PACING = ['slow', 'moderate', 'fast'] as const;
 export const BOOK_DIFFICULTY = ['easy', 'moderate', 'challenging'] as const;
+export const CATALOG_ENRICHMENT_STATUSES = [
+  'seeded',
+  'imported',
+  'reviewed',
+  'needs-review',
+] as const;

@@ -2,6 +2,7 @@ import {
   BOOK_DIFFICULTY,
   BOOK_FORMATS,
   BOOK_PACING,
+  CATALOG_ENRICHMENT_STATUSES,
   OUTCOME_KEYS,
   READING_DEPTHS,
 } from '@bookcompass/shared';
@@ -9,6 +10,7 @@ import { Type } from 'class-transformer';
 import {
   ArrayMaxSize,
   IsArray,
+  IsBoolean,
   IsIn,
   IsISBN,
   IsMongoId,
@@ -86,6 +88,28 @@ export class CreateBookDto {
   @ArrayMaxSize(4)
   @IsIn(BOOK_FORMATS, { each: true })
   formats?: string[];
+
+  @IsOptional()
+  @IsIn(CATALOG_ENRICHMENT_STATUSES)
+  enrichmentStatus?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  recommendationEligible?: boolean;
+
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(20)
+  @IsString({ each: true })
+  @MaxLength(60, { each: true })
+  styleTags?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(20)
+  @IsString({ each: true })
+  @MaxLength(60, { each: true })
+  riskTags?: string[];
 
   @IsOptional()
   @Type(() => Number)
