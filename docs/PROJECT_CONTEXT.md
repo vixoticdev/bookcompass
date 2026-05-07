@@ -260,6 +260,9 @@ As of 2026-05-07:
 - `/onboarding` can now update an existing authenticated profile and capture first reading behavior signals for liked, disliked, completed, saved, and DNF patterns.
 - Recommendation history cards now capture and hydrate candidate feedback progress percentages and notes.
 - `/admin/books` now has catalog review queue presets for imported drafts, needs-review drafts, and reviewed eligible books, plus quick saved review states for draft, review, approve, and exclude.
+- Backend exposes admin-only analytics through `GET /recommendation-sessions/admin/analytics` for catalog review counts and recommendation candidate feedback outcomes.
+- `/admin` now displays live catalog review readiness and candidate feedback outcome counts for admin users.
+- `/admin/books` review queues now paginate with previous/next controls backed by catalog `limit` and `offset`.
 - `npm run smoke:day13` provides repeatable live API smoke coverage for `/admin/authors`, book eligibility review toggles, recommendation feedback note/progress persistence, and `/profile/history` backing reads.
 - Frontend reading identity is split across `/onboarding/signup`, `/onboarding/preferences`, and `/onboarding/signals`.
 - `/onboarding/signals` now displays reader-owned reading event and DNF history.
@@ -283,8 +286,8 @@ As of 2026-05-07:
 - Production identity provider integration is not implemented yet.
 - Recommendation engine is documented; session storage, input aggregation, first-pass scoring/ranking, score breakdowns, signals, and explanation lines exist.
 - Recommendation service can now build scoring input from profile, reading events, DNF records, and catalog candidates for a decision context.
-- Admin dashboard is documented; dedicated author management exists at `/admin/authors`, and book review operations exist at `/admin/books`.
-- Catalog review queues, analytics, and tuning controls are not implemented yet.
+- Admin dashboard is documented; dedicated author management exists at `/admin/authors`, book review operations exist at `/admin/books`, and operational analytics exist on `/admin`.
+- Recommendation tuning controls are not implemented yet.
 - CI/CD is not configured yet.
 
 Important historical context:
@@ -798,6 +801,33 @@ Recommended Day 14 implementation target:
 - Add admin analytics for review queue counts and candidate feedback outcomes.
 - Add pagination controls to admin book review queues before imported drafts scale beyond the first page.
 
+### Day 14: 2026-05-07
+
+Goal: add admin analytics and pagination for catalog review queues.
+
+Branch: `day14-2026-05-07-admin-analytics-pagination`
+
+Completed:
+
+- Added admin-only `GET /recommendation-sessions/admin/analytics`.
+- Added catalog review analytics for total books, eligible books, ineligible books, and enrichment-status queue counts.
+- Added recommendation candidate feedback analytics grouped by recorded feedback status.
+- Wired `/admin` to display catalog review readiness and candidate feedback outcome counts from the live API.
+- Added previous/next pagination controls to `/admin/books` review queues using catalog `limit` and `offset`.
+- Reset review queue pagination when filters and queue presets change.
+- Updated backend, frontend, admin dashboard, recommendation engine, MVP LLD, project context, and release documentation.
+
+Validation:
+
+- `npm run test --workspace @bookcompass/api -- books recommendations --runInBand`
+- `npm run check`
+
+Recommended Day 15 implementation target:
+
+- Add frontend smoke or component-level coverage around recommendation feedback and admin review queue pagination.
+- Add a live smoke script for the admin analytics endpoint and paginated `/admin/books` review queues.
+- Start the recommendation tuning surface once analytics can expose enough feedback outcomes to guide safe tuning.
+
 ## Month-One Timeline
 
 ### Phase 1: Foundation
@@ -932,11 +962,11 @@ Output:
 
 ## Immediate Next Steps
 
-1. Add frontend controls for recommendation feedback note/progress capture.
-2. Add catalog review queue filters and saved review states for imported draft records.
-3. Add live smoke coverage for `/admin/authors`, book eligibility toggles, and `/profile/history`.
+1. Add frontend smoke or component-level coverage around recommendation feedback and admin review queue pagination.
+2. Add a live smoke script for admin analytics and paginated `/admin/books` review queues.
+3. Start the recommendation tuning surface once analytics can expose enough feedback outcomes to guide safe tuning.
 4. Keep larger catalog draft ingestion behind `GOOGLE_BOOKS_API_KEY` and cached source responses.
-5. Add admin analytics and tuning surfaces after catalog review workflow is stable.
+5. Keep expanding reviewed catalog metadata before enabling imported drafts for recommendations.
 
 ## Engineering Rules For Future Development Sessions
 

@@ -27,6 +27,7 @@
 - Day 10 adds authenticated candidate feedback capture through `POST /recommendation-sessions/:sessionId/feedback` and maps feedback into reading events for future scoring.
 - Day 11 expands catalog CRUD with detail reads plus admin-only update and delete paths for authors and books.
 - Day 13 adds `npm run smoke:day13` for live API coverage behind `/admin/authors`, catalog review queue states, recommendation feedback note/progress capture, and `/profile/history` hydration.
+- Day 14 adds admin-only analytics through `GET /recommendation-sessions/admin/analytics`, combining catalog review counts with recorded recommendation candidate feedback outcomes.
 - Initial catalog seed script exists at `npm run seed --workspace @bookcompass/api`.
 - First admin bootstrap script exists at `npm run bootstrap:admin --workspace @bookcompass/api` and reads `ADMIN_EMAIL`, `ADMIN_PASSWORD`, and optional `ADMIN_DISPLAY_NAME`.
 - The Day 6 manual catalog batch expands the repeatable seed to 25 authors and 27 books for local exploration.
@@ -43,7 +44,7 @@ src/
   authors/              implemented: schema, DTO, service, catalog REST with admin mutations
   reading-events/       implemented: schema, DTO, service, reader create/history, admin list
   dnf/                  implemented: schema, DTO, service, reader create/history, admin list
-  recommendations/      implemented: session schema, DTO, input aggregation, deterministic scoring, reader history, feedback capture, minimal REST
+  recommendations/      implemented: session schema, DTO, input aggregation, deterministic scoring, reader history, feedback capture, admin analytics, minimal REST
   admin/                implemented: first-admin bootstrap script; screens planned
   analytics/            planned
   billing/              planned
@@ -58,7 +59,7 @@ src/
 - admin-only `POST /books`, `PATCH /books/:bookId`, `DELETE /books/:bookId`, public `GET /books`, public `GET /books/:bookId`
 - `POST /reading-events`, `GET /reading-events/me`, admin-only `GET /reading-events`
 - `POST /dnf-records`, `GET /dnf-records/me`, admin-only `GET /dnf-records`
-- `POST /recommendation-sessions`, `GET /recommendation-sessions/me`, `POST /recommendation-sessions/:sessionId/feedback`, admin-only `GET /recommendation-sessions`
+- `POST /recommendation-sessions`, `GET /recommendation-sessions/me`, `POST /recommendation-sessions/:sessionId/feedback`, admin-only `GET /recommendation-sessions`, admin-only `GET /recommendation-sessions/admin/analytics`
 
 These endpoints are intentionally thin foundation write/read paths. Self-service write endpoints for profiles, reading events, DNF records, and recommendation sessions require a bearer token and derive ownership from the authenticated request. Catalog reads remain open for local MVP exploration; catalog mutations and global reader data lists now require an admin role.
 
@@ -175,6 +176,12 @@ Day 13 live smoke:
 
 - `npm run smoke:day13` expects `ADMIN_EMAIL` and `ADMIN_PASSWORD` for an existing admin.
 - The script creates a temporary reader, author, and imported draft book; verifies author listing, imported draft filtering, eligibility approval filtering, feedback note/progress persistence, profile-history backing reads, and then deletes the temporary catalog records.
+
+Day 14 admin analytics:
+
+- `BooksService.getReviewAnalytics` summarizes total catalog records, recommendation eligibility, and enrichment-status queue counts.
+- `RecommendationsService.getAdminAnalytics` aggregates recorded candidate feedback statuses across recommendation sessions.
+- The analytics endpoint is admin guarded and intended as a lightweight operational snapshot, not a public reader contract.
 
 ## Documentation Rule
 

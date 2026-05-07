@@ -158,6 +158,12 @@ Day 13 feedback detail and review queues:
 - `/admin/books` now supports style-tag, risk-tag, eligible-only, and draft-only filter combinations.
 - Book rows now include quick saved review states for draft, needs review, approved, and excluded records, backed by `PATCH /books/:bookId`.
 
+Day 14 admin analytics and pagination:
+
+- `/admin` now reads `GET /recommendation-sessions/admin/analytics` and displays catalog review readiness counts plus recommendation feedback outcome counts.
+- `/admin/books` now passes `limit` and `offset` to the catalog query and exposes previous/next pagination controls for review queues.
+- Changing queue filters resets the book review queue to the first page so admins do not land on an empty later offset.
+
 Browser metadata:
 
 - The browser tab favicon uses `public/bookcompass-icon.png`.
@@ -168,7 +174,7 @@ Browser metadata:
 - `GET /authors?limit=100`
 - `GET /books?limit=25`
 - `GET /books?limit=20&outcome=&q=`
-- `GET /books?limit=20&outcome=&q=&enrichmentStatus=&recommendationEligible=&styleTag=&riskTag=`
+- `GET /books?limit=20&offset=&outcome=&q=&enrichmentStatus=&recommendationEligible=&styleTag=&riskTag=`
 - `POST /auth/signup`
 - `POST /auth/login`
 - `GET /auth/me`
@@ -182,6 +188,7 @@ Browser metadata:
 - `POST /recommendation-sessions`
 - `GET /recommendation-sessions/me`
 - `POST /recommendation-sessions/:sessionId/feedback`
+- admin-only `GET /recommendation-sessions/admin/analytics`
 - admin-only `POST /authors`
 - admin-only `POST /books`
 - admin-only `PATCH /authors/:authorId`

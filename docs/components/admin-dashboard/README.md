@@ -83,3 +83,10 @@ The admin dashboard makes BookCompass operationally tunable. It should help the 
   - `Approve`: `enrichmentStatus=reviewed`, `recommendationEligible=true`
   - `Exclude`: `enrichmentStatus=reviewed`, `recommendationEligible=false`
 - The Day 13 live smoke script covers the `/admin/authors` backing API, imported draft queue reads, reviewed eligibility toggles, and cleanup deletes.
+
+## Day 14 Analytics And Pagination
+
+- `/admin` now shows catalog review readiness counts from the admin analytics endpoint.
+- `/admin` also shows recorded recommendation candidate feedback totals by outcome status, including accepted, completed, and abandoned counts.
+- `/admin/books` review queues now paginate with previous/next controls backed by `GET /books?limit=&offset=`.
+- Filter and queue preset changes reset pagination to the first page before fetching the next review slice.

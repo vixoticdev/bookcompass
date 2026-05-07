@@ -16,6 +16,8 @@ Day 10 adds the first feedback loop. `POST /recommendation-sessions/:sessionId/f
 
 Day 13 exposes the full MVP feedback payload in the frontend. Readers can attach optional progress percentage and notes to recommendation feedback, and those details are preserved in recommendation history and the derived behavior event.
 
+Day 14 adds admin analytics over the feedback loop. Admins can read aggregate catalog review readiness and recorded candidate feedback status counts through `GET /recommendation-sessions/admin/analytics`.
+
 ## Inputs
 
 - reading profile
@@ -80,6 +82,11 @@ Feedback capture must preserve:
 - optional progress percentage and note from the reader
 - when feedback was recorded
 - enough behavior-event data for later scoring and analytics
+
+Admin analytics currently preserve:
+
+- catalog review queue totals by enrichment status and eligibility
+- recommendation candidate feedback totals by accepted, rejected, started, completed, and abandoned statuses
 
 Example:
 
