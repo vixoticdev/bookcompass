@@ -252,6 +252,7 @@ As of 2026-05-07:
 - Backend exposes reader-owned behavior history through `GET /reading-events/me` and `GET /dnf-records/me`.
 - Backend exposes reader-owned recommendation history through `GET /recommendation-sessions/me`.
 - `POST /recommendation-sessions` now builds recommendation input, scores catalog candidates deterministically, persists the top ranked candidates, and marks sessions `scored`.
+- Recommendation input now filters catalog candidates to `recommendationEligible: true`.
 - Recommendation candidates now support authenticated reader feedback for accepted, rejected, started, completed, and abandoned suggestions, and that feedback writes reusable reading events.
 - Backend has focused tests covering reader-owned event/DNF history, `RolesGuard`, admin-only global list metadata, and admin-only catalog mutation metadata.
 - Project workflow now requires a new daily branch for every development session, explicit unit tests with edge-case coverage, intensive validation before completion, and GitHub pushes only after all checks pass.
@@ -262,8 +263,10 @@ As of 2026-05-07:
 - `/recommendations/new` now creates scored recommendation sessions from current decision context.
 - `/recommendations/history` now displays authenticated reader recommendation sessions and explanation lines.
 - `/recommendations/history` and newly scored session cards can capture recommendation feedback on the top candidates.
-- `/admin/books` now has guarded author and book create forms backed by admin-only `POST /authors` and `POST /books`.
-- `/admin/books` now supports inline author and book edit/delete operations backed by admin-only `PATCH`/`DELETE` catalog endpoints.
+- `/profile/history` consolidates the current reader profile summary, reading events, DNF records, and recommendation feedback.
+- `/admin/authors` now owns guarded author create, edit, delete, and list operations.
+- `/admin/books` now owns guarded book create, edit, delete, and review metadata operations.
+- Book records now include review metadata for `enrichmentStatus`, `recommendationEligible`, `styleTags`, and `riskTags`.
 - Catalog enrichment plan is documented in `docs/architecture/catalog-enrichment.md`.
 - MVP HLD and LLD are documented in `docs/architecture/mvp-high-level-design.md` and `docs/architecture/mvp-low-level-design.md`.
 - Catalog ingestion scaffold exists in `tools/catalog-ingestion` for a 1,000-book mixed-genre draft catalog using Open Library discovery plus Google Books enrichment.
@@ -277,8 +280,8 @@ As of 2026-05-07:
 - Production identity provider integration is not implemented yet.
 - Recommendation engine is documented; session storage, input aggregation, first-pass scoring/ranking, score breakdowns, signals, and explanation lines exist.
 - Recommendation service can now build scoring input from profile, reading events, DNF records, and catalog candidates for a decision context.
-- Admin dashboard is documented; first-pass author/book create, edit, and delete screens exist inside `/admin/books`.
-- Dedicated author management, catalog review queues, analytics, and tuning controls are not implemented yet.
+- Admin dashboard is documented; dedicated author management exists at `/admin/authors`, and book review operations exist at `/admin/books`.
+- Catalog review queues, analytics, and tuning controls are not implemented yet.
 - CI/CD is not configured yet.
 
 Important historical context:
@@ -731,6 +734,38 @@ Recommended Day 12 implementation target:
 - Add richer catalog metadata review fields for anti-DNF tuning and recommendation eligibility.
 - Add a dedicated reader profile/history page that consolidates profile preferences, behavior signals, DNF records, and recommendation feedback.
 
+### Day 12: 2026-05-07
+
+Goal: split author administration, add catalog review metadata, and consolidate reader history.
+
+Branch: `day12-2026-05-07-admin-authors-profile-history`
+
+Completed:
+
+- Added shared catalog enrichment statuses for seeded, imported, reviewed, and needs-review records.
+- Added book review metadata fields for `enrichmentStatus`, `recommendationEligible`, `styleTags`, and `riskTags`.
+- Added book list filters for enrichment status, eligibility, style tag, and risk tag.
+- Recommendation input now only selects recommendation-eligible book candidates.
+- Split author administration into dedicated `/admin/authors` route with create, edit, delete, and list operations.
+- Narrowed `/admin/books` to book operations and review metadata controls, including eligibility and anti-DNF risk tags.
+- Added `/profile/history` to consolidate current profile summary, reading events, DNF records, and recommendation feedback.
+- Updated backend, frontend, admin dashboard, recommendation engine, MVP LLD, and release documentation.
+
+Validation:
+
+- `npm run build --workspace @bookcompass/shared`
+- `npm run check`
+- `npm run test --workspace @bookcompass/api -- books recommendations --runInBand`
+- `npm run test --workspace @bookcompass/api -- --runInBand`
+- `npm run test:e2e --workspace @bookcompass/api`
+- Live Docker MongoDB API smoke for admin author/book review metadata filters, eligibility updates, reader profile creation, recommendation candidate eligibility, and recommendation history retrieval
+
+Recommended Day 13 implementation target:
+
+- Add frontend controls for recommendation feedback note/progress capture.
+- Add catalog review queue filters and saved review states for imported draft records.
+- Add live smoke coverage for `/admin/authors`, book eligibility toggles, and `/profile/history`.
+
 ## Month-One Timeline
 
 ### Phase 1: Foundation
@@ -865,11 +900,11 @@ Output:
 
 ## Immediate Next Steps
 
-1. Split dedicated `/admin/authors` routing out of the combined catalog screen.
-2. Add richer catalog metadata review fields for anti-DNF tuning and recommendation eligibility.
-3. Add a dedicated profile/history page that consolidates profile preferences, behavior signals, DNF records, and recommendation feedback.
+1. Add frontend controls for recommendation feedback note/progress capture.
+2. Add catalog review queue filters and saved review states for imported draft records.
+3. Add live smoke coverage for `/admin/authors`, book eligibility toggles, and `/profile/history`.
 4. Keep larger catalog draft ingestion behind `GOOGLE_BOOKS_API_KEY` and cached source responses.
-5. Add frontend polish around feedback notes/progress when recommendation outcomes need more detail than one-click status.
+5. Add admin analytics and tuning surfaces after catalog review workflow is stable.
 
 ## Engineering Rules For Future Development Sessions
 

@@ -84,6 +84,15 @@ export type BookPacing = (typeof BOOK_PACING)[number];
 export const BOOK_DIFFICULTY = ['easy', 'moderate', 'challenging'] as const;
 export type BookDifficulty = (typeof BOOK_DIFFICULTY)[number];
 
+export const CATALOG_ENRICHMENT_STATUSES = [
+  'seeded',
+  'imported',
+  'reviewed',
+  'needs-review',
+] as const;
+export type CatalogEnrichmentStatus =
+  (typeof CATALOG_ENRICHMENT_STATUSES)[number];
+
 export type RecommendationSignal = {
   key: string;
   label: string;

@@ -45,6 +45,8 @@ Catalog:
 - `PATCH /authors/:authorId`, `PATCH /books/:bookId`: admin-only catalog update paths.
 - `DELETE /authors/:authorId`, `DELETE /books/:bookId`: admin-only catalog deletion paths.
 - Existing filters and pagination remain the query foundation for library, admin, and candidate generation.
+- Book list filters include review metadata for `enrichmentStatus`, `recommendationEligible`, `styleTag`, and `riskTag`.
+- Book records include `enrichmentStatus`, `recommendationEligible`, `styleTags`, and `riskTags` for admin review and anti-DNF tuning.
 
 Recommendations:
 
@@ -87,10 +89,12 @@ Current Day 7 reading identity routes:
 /onboarding/signup
 /onboarding/preferences
 /onboarding/signals
+/profile/history
 /library
 /recommendations/new
 /recommendations/history
 /admin
+/admin/authors
 /admin/books
 ```
 
@@ -99,9 +103,11 @@ Route responsibilities:
 - `/onboarding/signup`: account creation and initial JWT storage.
 - `/onboarding/preferences`: current profile create/update through `/profiles/me` contracts.
 - `/onboarding/signals`: event and DNF capture plus reader-owned history display.
+- `/profile/history`: consolidated profile summary, behavior history, DNF history, and recommendation feedback.
 - `/recommendations/new`: creates a scored recommendation session.
 - `/recommendations/history`: reads current-reader scored recommendation history.
-- `/admin/books`: lists catalog records and creates, edits, and deletes authors/books through guarded admin endpoints.
+- `/admin/authors`: lists, creates, edits, and deletes authors through guarded admin endpoints.
+- `/admin/books`: lists, creates, edits, and deletes books and review metadata through guarded admin endpoints.
 
 React Query owns server state. Axios owns bearer token attachment from `localStorage`.
 
@@ -165,7 +171,7 @@ Day 8 aggregator baseline:
 - load current reading profile by user id
 - load current-reader reading events
 - load current-reader DNF records
-- load up to 50 catalog candidates filtered by selected outcome, preferred depth, and available minutes
+- load up to 50 catalog candidates filtered by selected outcome, preferred depth, available minutes, and `recommendationEligible: true`
 
 The MVP scoring output persists:
 

@@ -30,6 +30,10 @@ export type Book = {
   difficulty: string;
   depth: string;
   formats: string[];
+  enrichmentStatus: string;
+  recommendationEligible: boolean;
+  styleTags: string[];
+  riskTags: string[];
   pageCount?: number;
   estimatedMinutes?: number;
   googleBooksVolumeId?: string;
@@ -59,6 +63,10 @@ export type CreateBookInput = {
   difficulty?: string;
   depth?: string;
   formats?: string[];
+  enrichmentStatus?: string;
+  recommendationEligible?: boolean;
+  styleTags?: string[];
+  riskTags?: string[];
   pageCount?: number;
   estimatedMinutes?: number;
   googleBooksVolumeId?: string;
@@ -205,7 +213,9 @@ export class ApiError extends Error {
   }
 }
 
-function cleanParams(params: Record<string, string | number | undefined>) {
+function cleanParams(
+  params: Record<string, string | number | boolean | undefined>,
+) {
   return Object.fromEntries(
     Object.entries(params).filter(([, value]) => value !== undefined && value !== ''),
   );
@@ -248,6 +258,10 @@ export function listBooks(params: {
   difficulty?: string;
   depth?: string;
   format?: string;
+  enrichmentStatus?: string;
+  recommendationEligible?: boolean;
+  styleTag?: string;
+  riskTag?: string;
   maxEstimatedMinutes?: number;
   limit?: number;
   offset?: number;

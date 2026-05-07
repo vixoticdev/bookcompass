@@ -2,6 +2,7 @@ import {
   BOOK_DIFFICULTY,
   BOOK_FORMATS,
   BOOK_PACING,
+  CATALOG_ENRICHMENT_STATUSES,
   OUTCOME_KEYS,
   READING_DEPTHS,
 } from '@bookcompass/shared';
@@ -55,6 +56,22 @@ export class Book {
 
   @Prop({ type: [String], enum: BOOK_FORMATS, default: ['ebook'] })
   formats: string[];
+
+  @Prop({
+    enum: CATALOG_ENRICHMENT_STATUSES,
+    default: 'seeded',
+    index: true,
+  })
+  enrichmentStatus: string;
+
+  @Prop({ default: true, index: true })
+  recommendationEligible: boolean;
+
+  @Prop({ type: [String], default: [], index: true })
+  styleTags: string[];
+
+  @Prop({ type: [String], default: [], index: true })
+  riskTags: string[];
 
   @Prop({ min: 1 })
   pageCount?: number;

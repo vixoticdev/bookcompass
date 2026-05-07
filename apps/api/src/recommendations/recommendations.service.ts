@@ -163,6 +163,7 @@ export class RecommendationsService {
           outcome: context.selectedOutcome,
           depth: context.preferredDepth,
           maxEstimatedMinutes: context.availableMinutes,
+          recommendationEligible: true,
           limit: 50,
           offset: 0,
         }),

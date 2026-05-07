@@ -120,6 +120,7 @@ Catalog list response shape:
 - `ReadingEvent.userId + occurredAt` supports user timelines.
 - `DnfRecord.userId + bookId` is unique and supports anti-DNF lookups.
 - `RecommendationSession.userId + createdAt` supports recent session retrieval.
+- `Book.enrichmentStatus`, `Book.recommendationEligible`, `Book.styleTags`, and `Book.riskTags` support catalog review, recommendation eligibility, and anti-DNF tuning.
 
 ## API Contract Style
 
@@ -160,6 +161,13 @@ The catalog should grow in layers:
 - recommendation metadata: outcome tags, pacing, difficulty, depth, estimated minutes, style tags
 - anti-DNF signals: slow-start risk, density risk, abstraction level, observed abandonment reasons
 - external connectors: Google Books/Open Library imports with admin review before recommendation eligibility
+
+Day 12 catalog review fields:
+
+- Books now store `enrichmentStatus` as `seeded`, `imported`, `reviewed`, or `needs-review`.
+- Books now store `recommendationEligible`, `styleTags`, and `riskTags`.
+- `GET /books` can filter by `enrichmentStatus`, `recommendationEligible`, `styleTag`, and `riskTag`.
+- Recommendation input generation requests only `recommendationEligible: true` candidates.
 
 ## Documentation Rule
 

@@ -12,6 +12,10 @@ describe('buildBookFilters', () => {
         difficulty: 'moderate',
         depth: 'deep',
         format: 'ebook',
+        enrichmentStatus: 'reviewed',
+        recommendationEligible: true,
+        styleTag: 'practical',
+        riskTag: 'dense',
         maxEstimatedMinutes: 420,
       }),
     ).toEqual({
@@ -23,6 +27,10 @@ describe('buildBookFilters', () => {
       difficulty: 'moderate',
       depth: 'deep',
       formats: 'ebook',
+      enrichmentStatus: 'reviewed',
+      recommendationEligible: true,
+      styleTags: 'practical',
+      riskTags: 'dense',
       estimatedMinutes: { $lte: 420 },
     });
   });
@@ -30,6 +38,12 @@ describe('buildBookFilters', () => {
   it('escapes search text before creating a regex filter', () => {
     expect(buildBookFilters({ q: 'C++ (fast)' })).toEqual({
       title: { $regex: 'C\\+\\+ \\(fast\\)', $options: 'i' },
+    });
+  });
+
+  it('keeps false recommendation eligibility as an explicit review filter', () => {
+    expect(buildBookFilters({ recommendationEligible: false })).toEqual({
+      recommendationEligible: false,
     });
   });
 });

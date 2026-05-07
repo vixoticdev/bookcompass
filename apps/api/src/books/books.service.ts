@@ -46,6 +46,22 @@ export function buildBookFilters(query: ListBooksQueryDto) {
     filters.formats = query.format;
   }
 
+  if (query.enrichmentStatus) {
+    filters.enrichmentStatus = query.enrichmentStatus;
+  }
+
+  if (query.recommendationEligible !== undefined) {
+    filters.recommendationEligible = query.recommendationEligible;
+  }
+
+  if (query.styleTag) {
+    filters.styleTags = query.styleTag;
+  }
+
+  if (query.riskTag) {
+    filters.riskTags = query.riskTag;
+  }
+
   if (query.maxEstimatedMinutes) {
     filters.estimatedMinutes = { $lte: query.maxEstimatedMinutes };
   }

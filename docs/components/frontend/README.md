@@ -142,6 +142,14 @@ Day 11 admin catalog CRUD:
 - Book edits post to admin-only `PATCH /books/:bookId`; deletes use `DELETE /books/:bookId`.
 - Successful catalog mutations refresh the relevant React Query catalog caches.
 
+Day 12 profile history and admin split:
+
+- `/profile/history` consolidates the current reader session, profile summary, reading events, DNF records, and recommendation feedback.
+- `/admin/authors` now owns author create, edit, delete, and list operations.
+- `/admin/books` now focuses on book create, edit, delete, and review metadata.
+- Book admin controls now include enrichment status, recommendation eligibility, style tags, and risk tags.
+- Book list filters now include enrichment status and an eligible-only toggle.
+
 Browser metadata:
 
 - The browser tab favicon uses `public/bookcompass-icon.png`.
@@ -152,6 +160,7 @@ Browser metadata:
 - `GET /authors?limit=100`
 - `GET /books?limit=25`
 - `GET /books?limit=20&outcome=&q=`
+- `GET /books?limit=20&outcome=&q=&enrichmentStatus=&recommendationEligible=`
 - `POST /auth/signup`
 - `POST /auth/login`
 - `GET /auth/me`

@@ -2,11 +2,13 @@ import {
   BOOK_DIFFICULTY,
   BOOK_FORMATS,
   BOOK_PACING,
+  CATALOG_ENRICHMENT_STATUSES,
   OUTCOME_KEYS,
   READING_DEPTHS,
 } from '@bookcompass/shared';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
+  IsBoolean,
   IsIn,
   IsMongoId,
   IsNumber,
@@ -51,6 +53,25 @@ export class ListBooksQueryDto {
   @IsOptional()
   @IsIn(BOOK_FORMATS)
   format?: string;
+
+  @IsOptional()
+  @IsIn(CATALOG_ENRICHMENT_STATUSES)
+  enrichmentStatus?: string;
+
+  @IsOptional()
+  @Transform(({ value }) => value === true || value === 'true')
+  @IsBoolean()
+  recommendationEligible?: boolean;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(60)
+  styleTag?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(60)
+  riskTag?: string;
 
   @IsOptional()
   @Type(() => Number)
