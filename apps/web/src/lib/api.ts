@@ -43,6 +43,8 @@ export type CreateAuthorInput = {
   outcomeStrengths?: string[];
 };
 
+export type UpdateAuthorInput = Partial<CreateAuthorInput>;
+
 export type CreateBookInput = {
   title: string;
   authorId: string;
@@ -62,6 +64,8 @@ export type CreateBookInput = {
   googleBooksVolumeId?: string;
   thumbnailUrl?: string;
 };
+
+export type UpdateBookInput = Partial<CreateBookInput>;
 
 export type CreateUserInput = {
   displayName: string;
@@ -265,9 +269,48 @@ export function createAuthor(input: CreateAuthorInput) {
     });
 }
 
+export function updateAuthor(input: {
+  authorId: string;
+  body: UpdateAuthorInput;
+}) {
+  return axiosInstance
+    .patch<Author>(`/authors/${input.authorId}`, input.body)
+    .then((response) => response.data)
+    .catch((error: unknown) => {
+      throw toApiError(error);
+    });
+}
+
+export function deleteAuthor(authorId: string) {
+  return axiosInstance
+    .delete<Author>(`/authors/${authorId}`)
+    .then((response) => response.data)
+    .catch((error: unknown) => {
+      throw toApiError(error);
+    });
+}
+
 export function createBook(input: CreateBookInput) {
   return axiosInstance
     .post<Book>('/books', input)
+    .then((response) => response.data)
+    .catch((error: unknown) => {
+      throw toApiError(error);
+    });
+}
+
+export function updateBook(input: { bookId: string; body: UpdateBookInput }) {
+  return axiosInstance
+    .patch<Book>(`/books/${input.bookId}`, input.body)
+    .then((response) => response.data)
+    .catch((error: unknown) => {
+      throw toApiError(error);
+    });
+}
+
+export function deleteBook(bookId: string) {
+  return axiosInstance
+    .delete<Book>(`/books/${bookId}`)
     .then((response) => response.data)
     .catch((error: unknown) => {
       throw toApiError(error);

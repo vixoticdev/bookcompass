@@ -7,9 +7,12 @@ import {
   Gauge,
   LibraryBig,
   ListChecks,
+  Pencil,
   Settings2,
   Sparkles,
+  Trash2,
   UserRound,
+  X,
 } from 'lucide-react'
 import {
   type FormEvent,
@@ -30,15 +33,21 @@ import {
   useCreateReadingEvent,
   useCreateReadingIdentity,
   useCurrentUser,
+  useDeleteAuthor,
+  useDeleteBook,
   useLogin,
   useMyDnfRecords,
   useMyRecommendationSessions,
   useMyReadingEvents,
   useMyReadingProfile,
   useRecordRecommendationFeedback,
+  useUpdateAuthor,
+  useUpdateBook,
   useUpdateMyReadingProfile,
 } from './lib/queries'
 import type {
+  Author,
+  Book,
   RecommendationFeedbackStatus,
   RecommendationSession,
 } from './lib/api'
@@ -1229,12 +1238,18 @@ function AdminHome() {
 
 function AdminBooks() {
   const createAuthor = useCreateAuthor()
+  const updateAuthor = useUpdateAuthor()
+  const deleteAuthor = useDeleteAuthor()
   const createBook = useCreateBook()
+  const updateBook = useUpdateBook()
+  const deleteBook = useDeleteBook()
   const [q, setQ] = useState('')
   const [outcome, setOutcome] = useState('productivity')
+  const [editingAuthorId, setEditingAuthorId] = useState('')
   const [authorName, setAuthorName] = useState('')
   const [authorGenres, setAuthorGenres] = useState('Business, Productivity')
   const [authorOutcome, setAuthorOutcome] = useState('productivity')
+  const [editingBookId, setEditingBookId] = useState('')
   const [bookTitle, setBookTitle] = useState('')
   const [bookAuthorId, setBookAuthorId] = useState('')
   const [bookGenres, setBookGenres] = useState('Business, Productivity')
@@ -1256,16 +1271,23 @@ function AdminBooks() {
 
   function handleAuthorCreate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    createAuthor.mutate({
+    const payload = {
       knownForGenres: toList(authorGenres),
       name: authorName,
       outcomeStrengths: [authorOutcome],
-    })
+    }
+
+    if (editingAuthorId) {
+      updateAuthor.mutate({ authorId: editingAuthorId, body: payload })
+      return
+    }
+
+    createAuthor.mutate(payload)
   }
 
   function handleBookCreate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    createBook.mutate({
+    const payload = {
       authorId: bookAuthorId,
       depth: bookDepth,
       difficulty: bookDifficulty,
@@ -1275,8 +1297,57 @@ function AdminBooks() {
       outcomeTags: [bookOutcome],
       pacing: bookPacing,
       title: bookTitle,
-    })
+    }
+
+    if (editingBookId) {
+      updateBook.mutate({ bookId: editingBookId, body: payload })
+      return
+    }
+
+    createBook.mutate(payload)
   }
+
+  function startAuthorEdit(author: Author) {
+    setEditingAuthorId(author._id)
+    setAuthorName(author.name)
+    setAuthorGenres(author.knownForGenres.join(', '))
+    setAuthorOutcome(author.outcomeStrengths[0] ?? 'productivity')
+  }
+
+  function resetAuthorForm() {
+    setEditingAuthorId('')
+    setAuthorName('')
+    setAuthorGenres('Business, Productivity')
+    setAuthorOutcome('productivity')
+  }
+
+  function startBookEdit(book: Book) {
+    setEditingBookId(book._id)
+    setBookTitle(book.title)
+    setBookAuthorId(book.authorId)
+    setBookGenres(book.genres.join(', '))
+    setBookOutcome(book.outcomeTags[0] ?? 'productivity')
+    setBookDepth(book.depth)
+    setBookPacing(book.pacing)
+    setBookDifficulty(book.difficulty)
+    setBookFormat(book.formats[0] ?? 'ebook')
+    setEstimatedMinutes(book.estimatedMinutes ?? 240)
+  }
+
+  function resetBookForm() {
+    setEditingBookId('')
+    setBookTitle('')
+    setBookGenres('Business, Productivity')
+    setBookOutcome('productivity')
+    setBookDepth('balanced')
+    setBookPacing('moderate')
+    setBookDifficulty('moderate')
+    setBookFormat('ebook')
+    setEstimatedMinutes(240)
+  }
+
+  const isSavingAuthor = createAuthor.isPending || updateAuthor.isPending
+  const isSavingBook = createBook.isPending || updateBook.isPending
 
   return (
     <div className="space-y-6">
@@ -1291,7 +1362,21 @@ function AdminBooks() {
           className="rounded-md border border-[#d8cbb8] bg-[#fffaf0] p-5"
           onSubmit={handleAuthorCreate}
         >
-          <h2 className="text-lg font-semibold">Create author</h2>
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-lg font-semibold">
+              {editingAuthorId ? 'Edit author' : 'Create author'}
+            </h2>
+            {editingAuthorId ? (
+              <button
+                className="inline-flex size-9 items-center justify-center rounded-md border border-[#d8cbb8] bg-white/70 text-[#5c4f40] hover:border-[#315d48]"
+                onClick={resetAuthorForm}
+                title="Cancel author edit"
+                type="button"
+              >
+                <X size={16} />
+              </button>
+            ) : null}
+          </div>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <TextField label="Name" onChange={setAuthorName} value={authorName} />
             <TextField
@@ -1308,11 +1393,15 @@ function AdminBooks() {
           </div>
           <button
             className="mt-5 inline-flex h-11 items-center gap-2 rounded-md bg-[#2f5d46] px-4 text-sm font-semibold text-[#fffaf0] disabled:cursor-not-allowed disabled:opacity-60"
-            disabled={createAuthor.isPending || authorName.trim().length < 2}
+            disabled={isSavingAuthor || authorName.trim().length < 2}
             type="submit"
           >
             <BookMarked size={17} />
-            {createAuthor.isPending ? 'Creating author' : 'Create author'}
+            {isSavingAuthor
+              ? 'Saving author'
+              : editingAuthorId
+                ? 'Update author'
+                : 'Create author'}
           </button>
           {createAuthor.isSuccess ? (
             <StatusMessage tone="success">
@@ -1324,13 +1413,37 @@ function AdminBooks() {
               Author creation requires an admin session.
             </StatusMessage>
           ) : null}
+          {updateAuthor.isSuccess ? (
+            <StatusMessage tone="success">
+              Updated {updateAuthor.data.name}.
+            </StatusMessage>
+          ) : null}
+          {updateAuthor.isError || deleteAuthor.isError ? (
+            <StatusMessage tone="error">
+              Author changes require an admin session and an existing record.
+            </StatusMessage>
+          ) : null}
         </form>
 
         <form
           className="rounded-md border border-[#d8cbb8] bg-[#fffaf0] p-5"
           onSubmit={handleBookCreate}
         >
-          <h2 className="text-lg font-semibold">Create book</h2>
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-lg font-semibold">
+              {editingBookId ? 'Edit book' : 'Create book'}
+            </h2>
+            {editingBookId ? (
+              <button
+                className="inline-flex size-9 items-center justify-center rounded-md border border-[#d8cbb8] bg-white/70 text-[#5c4f40] hover:border-[#315d48]"
+                onClick={resetBookForm}
+                title="Cancel book edit"
+                type="button"
+              >
+                <X size={16} />
+              </button>
+            ) : null}
+          </div>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <TextField label="Title" onChange={setBookTitle} value={bookTitle} />
             <SelectField
@@ -1395,14 +1508,18 @@ function AdminBooks() {
           <button
             className="mt-5 inline-flex h-11 items-center gap-2 rounded-md bg-[#2f5d46] px-4 text-sm font-semibold text-[#fffaf0] disabled:cursor-not-allowed disabled:opacity-60"
             disabled={
-              createBook.isPending ||
+              isSavingBook ||
               bookTitle.trim().length === 0 ||
               !bookAuthorId
             }
             type="submit"
           >
             <BookMarked size={17} />
-            {createBook.isPending ? 'Creating book' : 'Create book'}
+            {isSavingBook
+              ? 'Saving book'
+              : editingBookId
+                ? 'Update book'
+                : 'Create book'}
           </button>
           {createBook.isSuccess ? (
             <StatusMessage tone="success">
@@ -1415,7 +1532,63 @@ function AdminBooks() {
               pair.
             </StatusMessage>
           ) : null}
+          {updateBook.isSuccess ? (
+            <StatusMessage tone="success">
+              Updated {updateBook.data.title}.
+            </StatusMessage>
+          ) : null}
+          {updateBook.isError || deleteBook.isError ? (
+            <StatusMessage tone="error">
+              Book changes require an admin session and an existing unique
+              title-author pair.
+            </StatusMessage>
+          ) : null}
         </form>
+      </section>
+
+      <section className="rounded-md border border-[#d8cbb8] bg-[#fffaf0] p-5">
+        <h2 className="text-lg font-semibold">Author operations</h2>
+        <div className="mt-4 overflow-hidden rounded-md border border-[#e2d5c2]">
+          <div className="grid grid-cols-[1fr_1fr_0.7fr] border-b border-[#e7dbc8] bg-[#f6eddd] px-4 py-3 text-xs font-semibold uppercase text-[#74624d]">
+            <span>Author</span>
+            <span>Genres</span>
+            <span>Actions</span>
+          </div>
+          {authorsQuery.isLoading ? (
+            <TableStatus>Loading authors</TableStatus>
+          ) : null}
+          {authorsQuery.isError ? (
+            <TableStatus>Could not load author data</TableStatus>
+          ) : null}
+          {authorsQuery.data?.items.map((author) => (
+            <div
+              className="grid grid-cols-[1fr_1fr_0.7fr] items-center gap-3 border-b border-[#eee4d6] px-4 py-4 text-sm last:border-b-0"
+              key={author._id}
+            >
+              <span className="font-semibold">{author.name}</span>
+              <span>{author.knownForGenres.join(', ') || 'Unset'}</span>
+              <span className="flex items-center gap-2">
+                <button
+                  className="inline-flex size-9 items-center justify-center rounded-md border border-[#d8cbb8] bg-white/70 text-[#5c4f40] hover:border-[#315d48]"
+                  onClick={() => startAuthorEdit(author)}
+                  title="Edit author"
+                  type="button"
+                >
+                  <Pencil size={15} />
+                </button>
+                <button
+                  className="inline-flex size-9 items-center justify-center rounded-md border border-[#dfb8a6] bg-white/70 text-[#7b2f19] hover:border-[#7b2f19] disabled:cursor-not-allowed disabled:opacity-60"
+                  disabled={deleteAuthor.isPending}
+                  onClick={() => deleteAuthor.mutate(author._id)}
+                  title="Delete author"
+                  type="button"
+                >
+                  <Trash2 size={15} />
+                </button>
+              </span>
+            </div>
+          ))}
+        </div>
       </section>
 
       <section className="rounded-md border border-[#d8cbb8] bg-[#fffaf0] p-5">
@@ -1429,11 +1602,12 @@ function AdminBooks() {
           />
         </div>
         <div className="mt-5 overflow-hidden rounded-md border border-[#e2d5c2]">
-          <div className="grid grid-cols-[1.1fr_0.8fr_0.8fr_0.8fr] border-b border-[#e7dbc8] bg-[#f6eddd] px-4 py-3 text-xs font-semibold uppercase text-[#74624d]">
+          <div className="grid grid-cols-[1.1fr_0.7fr_0.7fr_0.8fr_0.7fr] border-b border-[#e7dbc8] bg-[#f6eddd] px-4 py-3 text-xs font-semibold uppercase text-[#74624d]">
             <span>Book</span>
             <span>Pacing</span>
             <span>Difficulty</span>
             <span>Formats</span>
+            <span>Actions</span>
           </div>
           {booksQuery.isLoading ? <TableStatus>Loading books</TableStatus> : null}
           {booksQuery.isError ? (
@@ -1441,13 +1615,32 @@ function AdminBooks() {
           ) : null}
           {booksQuery.data?.items.map((book) => (
             <div
-              className="grid grid-cols-[1.1fr_0.8fr_0.8fr_0.8fr] border-b border-[#eee4d6] px-4 py-4 text-sm last:border-b-0"
+              className="grid grid-cols-[1.1fr_0.7fr_0.7fr_0.8fr_0.7fr] items-center gap-3 border-b border-[#eee4d6] px-4 py-4 text-sm last:border-b-0"
               key={book._id}
             >
               <span className="font-semibold">{book.title}</span>
               <span>{book.pacing}</span>
               <span>{book.difficulty}</span>
               <span>{book.formats.join(', ')}</span>
+              <span className="flex items-center gap-2">
+                <button
+                  className="inline-flex size-9 items-center justify-center rounded-md border border-[#d8cbb8] bg-white/70 text-[#5c4f40] hover:border-[#315d48]"
+                  onClick={() => startBookEdit(book)}
+                  title="Edit book"
+                  type="button"
+                >
+                  <Pencil size={15} />
+                </button>
+                <button
+                  className="inline-flex size-9 items-center justify-center rounded-md border border-[#dfb8a6] bg-white/70 text-[#7b2f19] hover:border-[#7b2f19] disabled:cursor-not-allowed disabled:opacity-60"
+                  disabled={deleteBook.isPending}
+                  onClick={() => deleteBook.mutate(book._id)}
+                  title="Delete book"
+                  type="button"
+                >
+                  <Trash2 size={15} />
+                </button>
+              </span>
             </div>
           ))}
           {booksQuery.data?.items.length === 0 ? (

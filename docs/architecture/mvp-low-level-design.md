@@ -39,8 +39,11 @@ DNF records:
 
 Catalog:
 
-- `GET /authors`, `GET /books`: public read paths for MVP exploration.
+- `GET /authors`, `GET /books`: public list read paths for MVP exploration.
+- `GET /authors/:authorId`, `GET /books/:bookId`: public catalog detail read paths.
 - `POST /authors`, `POST /books`: admin-only catalog creation paths.
+- `PATCH /authors/:authorId`, `PATCH /books/:bookId`: admin-only catalog update paths.
+- `DELETE /authors/:authorId`, `DELETE /books/:bookId`: admin-only catalog deletion paths.
 - Existing filters and pagination remain the query foundation for library, admin, and candidate generation.
 
 Recommendations:
@@ -98,7 +101,7 @@ Route responsibilities:
 - `/onboarding/signals`: event and DNF capture plus reader-owned history display.
 - `/recommendations/new`: creates a scored recommendation session.
 - `/recommendations/history`: reads current-reader scored recommendation history.
-- `/admin/books`: lists catalog records and creates authors/books through guarded admin endpoints.
+- `/admin/books`: lists catalog records and creates, edits, and deletes authors/books through guarded admin endpoints.
 
 React Query owns server state. Axios owns bearer token attachment from `localStorage`.
 

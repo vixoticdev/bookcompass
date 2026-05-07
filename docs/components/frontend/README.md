@@ -135,6 +135,13 @@ Day 10 recommendation feedback:
 - Feedback posts to `POST /recommendation-sessions/:sessionId/feedback`.
 - Successful feedback refreshes recommendation history and reader-owned behavior history queries.
 
+Day 11 admin catalog CRUD:
+
+- `/admin/books` now supports inline edit/delete controls for authors and books.
+- Author edits post to admin-only `PATCH /authors/:authorId`; deletes use `DELETE /authors/:authorId`.
+- Book edits post to admin-only `PATCH /books/:bookId`; deletes use `DELETE /books/:bookId`.
+- Successful catalog mutations refresh the relevant React Query catalog caches.
+
 Browser metadata:
 
 - The browser tab favicon uses `public/bookcompass-icon.png`.
@@ -160,6 +167,10 @@ Browser metadata:
 - `POST /recommendation-sessions/:sessionId/feedback`
 - admin-only `POST /authors`
 - admin-only `POST /books`
+- admin-only `PATCH /authors/:authorId`
+- admin-only `DELETE /authors/:authorId`
+- admin-only `PATCH /books/:bookId`
+- admin-only `DELETE /books/:bookId`
 
 ## Documentation Rule
 
