@@ -21,6 +21,7 @@ The admin dashboard makes BookCompass operationally tunable. It should help the 
 /admin
 /admin/books
 /admin/authors
+/admin/tuning
 /admin/recommendation-tuning
 /admin/analytics/dropoffs
 /admin/analytics/recommendation-paths
@@ -90,3 +91,10 @@ The admin dashboard makes BookCompass operationally tunable. It should help the 
 - `/admin` also shows recorded recommendation candidate feedback totals by outcome status, including accepted, completed, and abandoned counts.
 - `/admin/books` review queues now paginate with previous/next controls backed by `GET /books?limit=&offset=`.
 - Filter and queue preset changes reset pagination to the first page before fetching the next review slice.
+
+## Day 15 Recommendation Tuning
+
+- `/admin/tuning` now reads and updates the active recommendation tuning config.
+- The tuning screen controls outcome fit, personal fit, context fit, time fit, behavior fit, anti-DNF risk, and max returned recommendations.
+- The screen displays feedback outcome counts beside tuning controls so admins can adjust weights with recent candidate feedback in view.
+- `npm run smoke:day15` covers the admin analytics endpoint, tuning read/update/restore, and paginated book review queues.

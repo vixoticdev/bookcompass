@@ -1,4 +1,5 @@
 import { RecommendationsService } from './recommendations.service';
+import { DEFAULT_RECOMMENDATION_TUNING } from './schemas/recommendation-tuning.schema';
 
 type CreatedRecommendationCandidate = {
   bookId: string;
@@ -17,6 +18,10 @@ describe('RecommendationsService', () => {
     aggregate: jest.fn(),
     create: jest.fn(),
     find: jest.fn(),
+    findOneAndUpdate: jest.fn(),
+  };
+  const recommendationTuningModel = {
+    findOne: jest.fn(),
     findOneAndUpdate: jest.fn(),
   };
   const profilesService = {
@@ -44,8 +49,19 @@ describe('RecommendationsService', () => {
     recommendationSessionModel.findOneAndUpdate.mockReturnValue({
       exec: jest.fn(),
     });
+    recommendationTuningModel.findOne.mockReturnValue({
+      lean: jest.fn().mockReturnValue({
+        exec: jest.fn().mockResolvedValue(null),
+      }),
+    });
+    recommendationTuningModel.findOneAndUpdate.mockReturnValue({
+      lean: jest.fn().mockReturnValue({
+        exec: jest.fn(),
+      }),
+    });
     service = new RecommendationsService(
       recommendationSessionModel as never,
+      recommendationTuningModel as never,
       profilesService as never,
       readingEventsService as never,
       dnfService as never,
@@ -188,6 +204,78 @@ describe('RecommendationsService', () => {
     );
   });
 
+  it('applies active tuning weights and recommendation limit when scoring a new session', async () => {
+    const context = {
+      selectedOutcome: 'productivity',
+      mood: 'focused',
+      energyLevel: 'medium',
+      focusLevel: 'high',
+      availableMinutes: 420,
+      preferredDepth: 'deep',
+    };
+    const profile = {
+      targetOutcomes: ['productivity'],
+      favoriteGenres: ['productivity'],
+      preferredDepth: 'deep',
+      pacingTolerance: 'moderate',
+      difficultyTolerance: 'moderate',
+      preferredFormats: ['ebook'],
+      dailyReadingMinutes: 90,
+    };
+    const catalogCandidates = [
+      {
+        _id: 'book-1',
+        title: 'Weighted Fit',
+        genres: ['productivity'],
+        outcomeTags: ['productivity'],
+        pacing: 'moderate',
+        difficulty: 'moderate',
+        depth: 'deep',
+        formats: ['ebook'],
+        estimatedMinutes: 360,
+      },
+      {
+        _id: 'book-2',
+        title: 'Limited Fit',
+        genres: ['productivity'],
+        outcomeTags: ['productivity'],
+        pacing: 'moderate',
+        difficulty: 'moderate',
+        depth: 'deep',
+        formats: ['ebook'],
+        estimatedMinutes: 360,
+      },
+    ];
+
+    recommendationTuningModel.findOne.mockReturnValue({
+      lean: jest.fn().mockReturnValue({
+        exec: jest.fn().mockResolvedValue({
+          ...DEFAULT_RECOMMENDATION_TUNING,
+          outcomeFitWeight: 2,
+          maxRecommendations: 1,
+        }),
+      }),
+    });
+    profilesService.findByUserId.mockResolvedValue(profile);
+    readingEventsService.findByUserId.mockResolvedValue([]);
+    dnfService.findByUserId.mockResolvedValue([]);
+    booksService.findAll.mockResolvedValue({
+      items: catalogCandidates,
+      total: 2,
+      limit: 50,
+      offset: 0,
+    });
+    recommendationSessionModel.create.mockResolvedValue({ _id: 'session-1' });
+
+    await service.create({ userId: 'user-1', context });
+
+    const createCalls = recommendationSessionModel.create.mock
+      .calls as unknown[][];
+    const createdPayload = createCalls[0][0] as CreatedRecommendationSession;
+    expect(createdPayload.candidates).toHaveLength(1);
+    expect(createdPayload.candidates[0].scoreBreakdown.outcomeFit).toBe(90);
+  });
+
   it('penalizes direct DNF records more than reusable DNF pattern risk', () => {
     const context = {
       selectedOutcome: 'productivity',
@@ -305,6 +393,53 @@ describe('RecommendationsService', () => {
           _id: '$candidates.feedback.status',
           count: { $sum: 1 },
         },
+      },
+    ]);
+  });
+
+  it('returns default recommendation tuning when no active tuning document exists', async () => {
+    recommendationTuningModel.findOne.mockReturnValue({
+      lean: jest.fn().mockReturnValue({
+        exec: jest.fn().mockResolvedValue(null),
+      }),
+    });
+
+    await expect(service.getActiveTuning()).resolves.toEqual(
+      DEFAULT_RECOMMENDATION_TUNING,
+    );
+  });
+
+  it('upserts admin recommendation tuning with the active key only', async () => {
+    const updatedTuning = {
+      ...DEFAULT_RECOMMENDATION_TUNING,
+      personalFitWeight: 1.4,
+      note: 'Favor profile match after completion feedback improves.',
+    };
+    const exec = jest.fn().mockResolvedValue(updatedTuning);
+    const lean = jest.fn().mockReturnValue({ exec });
+    recommendationTuningModel.findOneAndUpdate.mockReturnValue({ lean });
+
+    await expect(
+      service.updateActiveTuning({
+        personalFitWeight: 1.4,
+        note: 'Favor profile match after completion feedback improves.',
+      }),
+    ).resolves.toEqual(updatedTuning);
+
+    expect(recommendationTuningModel.findOneAndUpdate.mock.calls[0]).toEqual([
+      { key: DEFAULT_RECOMMENDATION_TUNING.key },
+      {
+        $set: {
+          key: DEFAULT_RECOMMENDATION_TUNING.key,
+          personalFitWeight: 1.4,
+          note: 'Favor profile match after completion feedback improves.',
+        },
+      },
+      {
+        new: true,
+        runValidators: true,
+        setDefaultsOnInsert: true,
+        upsert: true,
       },
     ]);
   });

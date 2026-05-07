@@ -100,6 +100,7 @@ Catalog list response shape:
 - `ReadingEvent`: user/book timeline events such as started, liked, completed, abandoned, and saved.
 - `DnfRecord`: structured abandonment record with stopped percentage, reason, pacing/difficulty snapshot, and note.
 - `RecommendationSession`: user context for selected outcome, mood, energy, focus, available time, depth, candidates, score breakdowns, signals, explanations, and optional candidate feedback.
+- `RecommendationTuning`: active singleton config for deterministic scoring layer weights, max returned recommendations, and optional admin note.
 
 ## Validation Rules
 
@@ -182,6 +183,13 @@ Day 14 admin analytics:
 - `BooksService.getReviewAnalytics` summarizes total catalog records, recommendation eligibility, and enrichment-status queue counts.
 - `RecommendationsService.getAdminAnalytics` aggregates recorded candidate feedback statuses across recommendation sessions.
 - The analytics endpoint is admin guarded and intended as a lightweight operational snapshot, not a public reader contract.
+
+Day 15 recommendation tuning:
+
+- `GET /recommendation-sessions/admin/tuning` returns the active scoring tuning config or default weights if one has not been saved.
+- `PATCH /recommendation-sessions/admin/tuning` upserts the active scoring tuning config behind admin guards.
+- New recommendation sessions apply the active tuning weights to outcome fit, personal fit, context fit, time fit, behavior fit, and anti-DNF risk layers.
+- `npm run smoke:day15` expects `ADMIN_EMAIL`, `ADMIN_PASSWORD`, and a running API. It checks admin analytics, tuning read/update/restore, and paginated catalog review queue reads.
 
 ## Documentation Rule
 

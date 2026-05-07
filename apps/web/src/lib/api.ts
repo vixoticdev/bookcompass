@@ -217,6 +217,22 @@ export type AdminAnalytics = {
   };
 };
 
+export type RecommendationTuning = {
+  key: string;
+  outcomeFitWeight: number;
+  personalFitWeight: number;
+  contextFitWeight: number;
+  timeFitWeight: number;
+  behaviorFitWeight: number;
+  dnfRiskWeight: number;
+  maxRecommendations: number;
+  note?: string;
+};
+
+export type UpdateRecommendationTuningInput = Partial<
+  Omit<RecommendationTuning, 'key'>
+>;
+
 export type RecordRecommendationFeedbackInput = {
   sessionId: string;
   bookId: string;
@@ -298,6 +314,29 @@ export function listBooks(params: {
 export function getAdminAnalytics() {
   return axiosInstance
     .get<AdminAnalytics>('/recommendation-sessions/admin/analytics')
+    .then((response) => response.data)
+    .catch((error: unknown) => {
+      throw toApiError(error);
+    });
+}
+
+export function getRecommendationTuning() {
+  return axiosInstance
+    .get<RecommendationTuning>('/recommendation-sessions/admin/tuning')
+    .then((response) => response.data)
+    .catch((error: unknown) => {
+      throw toApiError(error);
+    });
+}
+
+export function updateRecommendationTuning(
+  input: UpdateRecommendationTuningInput,
+) {
+  return axiosInstance
+    .patch<RecommendationTuning>(
+      '/recommendation-sessions/admin/tuning',
+      input,
+    )
     .then((response) => response.data)
     .catch((error: unknown) => {
       throw toApiError(error);

@@ -55,8 +55,11 @@ Recommendations:
 - `POST /recommendation-sessions/:sessionId/feedback`: authenticated current-reader feedback capture for a scored candidate.
 - `GET /recommendation-sessions`: admin-only global list.
 - `GET /recommendation-sessions/admin/analytics`: admin-only operational analytics for catalog review queue counts and candidate feedback outcomes.
+- `GET /recommendation-sessions/admin/tuning`: admin-only read for the active deterministic scoring tuning config.
+- `PATCH /recommendation-sessions/admin/tuning`: admin-only update for active scoring weights and max returned recommendation count.
 - Current module can build recommendation input from profile, reading events, DNF records, and catalog candidates through `RecommendationsService.buildInput`.
 - Current module scores candidates through deterministic outcome, profile, context, time, behavior, and anti-DNF signals.
+- Current module applies persisted admin tuning weights to new scoring runs. Defaults are `1x` for every score layer and `10` returned recommendations, preserving Day 9 scoring behavior until an admin changes tuning.
 - Current module records feedback only when the session belongs to the authenticated reader and the book id is present in the session candidates.
 
 ## Access Policy
@@ -156,6 +159,13 @@ Admin analytics:
 2. API returns catalog review totals by enrichment status and recommendation eligibility.
 3. API returns recorded recommendation candidate feedback totals grouped by feedback status.
 
+Admin tuning:
+
+1. Web reads `GET /recommendation-sessions/admin/tuning` with an admin JWT.
+2. API returns the active tuning config or default scoring weights if no config has been persisted.
+3. Web patches changed layer weights through `PATCH /recommendation-sessions/admin/tuning`.
+4. API applies the active tuning config only to new recommendation sessions.
+
 Catalog ingestion:
 
 1. Open Library candidate search by genre.
@@ -190,6 +200,18 @@ The MVP scoring output persists:
 - risk signals
 - explanation lines
 - candidate feedback after the reader acts on a suggestion
+
+Admin tuning config:
+
+- active singleton key
+- `outcomeFitWeight`
+- `personalFitWeight`
+- `contextFitWeight`
+- `timeFitWeight`
+- `behaviorFitWeight`
+- `dnfRiskWeight`
+- `maxRecommendations`
+- optional admin note
 
 ## Testing Priorities
 

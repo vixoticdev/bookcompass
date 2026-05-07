@@ -10,6 +10,7 @@ import {
   createReadingEvent,
   getCurrentUser,
   getAdminAnalytics,
+  getRecommendationTuning,
   getMyReadingProfile,
   listMyDnfRecords,
   listMyRecommendationSessions,
@@ -21,6 +22,7 @@ import {
   signup,
   updateAuthor,
   updateBook,
+  updateRecommendationTuning,
   updateMyReadingProfile,
   type AuthInput,
   type CreateAuthorInput,
@@ -33,6 +35,7 @@ import {
   type SignupInput,
   type UpdateAuthorInput,
   type UpdateBookInput,
+  type UpdateRecommendationTuningInput,
 } from './api';
 
 export function useAuthors(params: Parameters<typeof listAuthors>[0] = {}) {
@@ -57,6 +60,31 @@ export function useAdminAnalytics() {
       typeof window !== 'undefined' &&
       Boolean(window.localStorage.getItem('bookcompass.accessToken')),
     retry: false,
+  });
+}
+
+export function useRecommendationTuning() {
+  return useQuery({
+    queryKey: ['admin', 'recommendation-tuning'],
+    queryFn: getRecommendationTuning,
+    enabled:
+      typeof window !== 'undefined' &&
+      Boolean(window.localStorage.getItem('bookcompass.accessToken')),
+    retry: false,
+  });
+}
+
+export function useUpdateRecommendationTuning() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: UpdateRecommendationTuningInput) =>
+      updateRecommendationTuning(input),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: ['admin', 'recommendation-tuning'],
+      });
+    },
   });
 }
 
