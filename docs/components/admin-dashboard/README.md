@@ -72,3 +72,14 @@ The admin dashboard makes BookCompass operationally tunable. It should help the 
 - Book controls include `enrichmentStatus`, `recommendationEligible`, `styleTags`, and `riskTags`.
 - Book list filters include review status and eligible-only filtering.
 - Catalog review queues, analytics, and tuning controls remain planned.
+
+## Day 13 Catalog Review Queue
+
+- `/admin/books` now has queue presets for imported drafts, needs-review drafts, and reviewed eligible books.
+- Admins can combine review status, eligibility/draft-only, outcome, style tag, risk tag, and title filters.
+- Each book row exposes saved review states:
+  - `Draft`: `enrichmentStatus=imported`, `recommendationEligible=false`
+  - `Review`: `enrichmentStatus=needs-review`, `recommendationEligible=false`
+  - `Approve`: `enrichmentStatus=reviewed`, `recommendationEligible=true`
+  - `Exclude`: `enrichmentStatus=reviewed`, `recommendationEligible=false`
+- The Day 13 live smoke script covers the `/admin/authors` backing API, imported draft queue reads, reviewed eligibility toggles, and cleanup deletes.

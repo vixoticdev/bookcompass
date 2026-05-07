@@ -287,6 +287,27 @@ function TextField({
   )
 }
 
+function TextAreaField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string
+  value: string
+  onChange: (value: string) => void
+}) {
+  return (
+    <label className="grid gap-2 text-sm font-semibold">
+      {label}
+      <textarea
+        className="min-h-24 rounded-md border border-[#cfc0aa] bg-white px-3 py-2 text-sm leading-6 outline-none focus:border-[#315d48]"
+        onChange={(event) => onChange(event.target.value)}
+        value={value}
+      />
+    </label>
+  )
+}
+
 function SelectField({
   label,
   value,
@@ -1256,13 +1277,43 @@ function RecommendationSessionCard({
 }) {
   const topCandidates = session.candidates.slice(0, 3)
   const recordFeedback = useRecordRecommendationFeedback()
+  const [feedbackDrafts, setFeedbackDrafts] = useState<
+    Record<string, { progressPercent: string; note: string }>
+  >({})
+
+  function getFeedbackDraft(bookId: string) {
+    return feedbackDrafts[bookId] ?? { progressPercent: '', note: '' }
+  }
+
+  function updateFeedbackDraft(
+    bookId: string,
+    patch: Partial<{ progressPercent: string; note: string }>,
+  ) {
+    setFeedbackDrafts((current) => ({
+      ...current,
+      [bookId]: {
+        ...(current[bookId] ?? { progressPercent: '', note: '' }),
+        ...patch,
+      },
+    }))
+  }
 
   function handleFeedback(
-    bookId: string,
+    candidate: RecommendationSession['candidates'][number],
     status: RecommendationFeedbackStatus,
   ) {
+    const draft = getFeedbackDraft(candidate.bookId)
+    const parsedProgress =
+      draft.progressPercent.trim().length > 0
+        ? Number(draft.progressPercent)
+        : candidate.feedback?.progressPercent
+
     recordFeedback.mutate({
-      bookId,
+      bookId: candidate.bookId,
+      note: draft.note.trim() || candidate.feedback?.note || undefined,
+      progressPercent: Number.isFinite(parsedProgress)
+        ? parsedProgress
+        : undefined,
       sessionId: session._id,
       status,
     })
@@ -1288,49 +1339,87 @@ function RecommendationSessionCard({
         <TableStatus>No scored candidates matched this context</TableStatus>
       ) : null}
       <div className="grid gap-3 pt-4">
-        {topCandidates.map((candidate) => (
-          <article
-            className="rounded-md border border-[#e2d5c2] bg-white/60 p-4"
-            key={candidate.bookId}
-          >
-            <div className="flex items-center justify-between gap-3">
-              <h3 className="font-semibold">
-                {bookTitleById.get(candidate.bookId) ?? candidate.bookId}
-              </h3>
-              <span className="rounded-md bg-[#e5eee7] px-2 py-1 text-sm font-semibold text-[#20372d]">
-                {candidate.finalScore}
-              </span>
-            </div>
-            <div className="mt-3 grid gap-2 text-sm text-[#5c4f40]">
-              {candidate.explanation.map((line) => (
-                <p key={line}>{line}</p>
-              ))}
-            </div>
-            <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-[#eee4d6] pt-3">
-              {feedbackActions.map(([status, label]) => (
-                <button
-                  className={[
-                    'inline-flex h-9 items-center rounded-md border px-3 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60',
-                    candidate.feedback?.status === status
-                      ? 'border-[#315d48] bg-[#e5eee7] text-[#20372d]'
-                      : 'border-[#d8cbb8] bg-white/70 text-[#5c4f40] hover:border-[#315d48]',
-                  ].join(' ')}
-                  disabled={recordFeedback.isPending}
-                  key={status}
-                  onClick={() => handleFeedback(candidate.bookId, status)}
-                  type="button"
-                >
-                  {label}
-                </button>
-              ))}
-              {candidate.feedback ? (
-                <span className="text-xs font-semibold uppercase text-[#8a602b]">
-                  Last marked {candidate.feedback.status}
+        {topCandidates.map((candidate) => {
+          const draft = getFeedbackDraft(candidate.bookId)
+          const progressValue =
+            draft.progressPercent ||
+            candidate.feedback?.progressPercent?.toString() ||
+            ''
+          const noteValue = draft.note || candidate.feedback?.note || ''
+
+          return (
+            <article
+              className="rounded-md border border-[#e2d5c2] bg-white/60 p-4"
+              key={candidate.bookId}
+            >
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="font-semibold">
+                  {bookTitleById.get(candidate.bookId) ?? candidate.bookId}
+                </h3>
+                <span className="rounded-md bg-[#e5eee7] px-2 py-1 text-sm font-semibold text-[#20372d]">
+                  {candidate.finalScore}
                 </span>
-              ) : null}
-            </div>
-          </article>
-        ))}
+              </div>
+              <div className="mt-3 grid gap-2 text-sm text-[#5c4f40]">
+                {candidate.explanation.map((line) => (
+                  <p key={line}>{line}</p>
+                ))}
+              </div>
+              <div className="mt-4 grid gap-3 border-t border-[#eee4d6] pt-3">
+                <div className="grid gap-3 sm:grid-cols-[160px_1fr]">
+                  <label className="grid gap-2 text-sm font-semibold">
+                    Progress %
+                    <input
+                      className="h-10 rounded-md border border-[#cfc0aa] bg-white px-3 text-sm outline-none focus:border-[#315d48]"
+                      max={100}
+                      min={0}
+                      onChange={(event) =>
+                        updateFeedbackDraft(candidate.bookId, {
+                          progressPercent: event.target.value,
+                        })
+                      }
+                      type="number"
+                      value={progressValue}
+                    />
+                  </label>
+                  <TextAreaField
+                    label="Feedback note"
+                    onChange={(note) =>
+                      updateFeedbackDraft(candidate.bookId, { note })
+                    }
+                    value={noteValue}
+                  />
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  {feedbackActions.map(([status, label]) => (
+                    <button
+                      className={[
+                        'inline-flex h-9 items-center rounded-md border px-3 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60',
+                        candidate.feedback?.status === status
+                          ? 'border-[#315d48] bg-[#e5eee7] text-[#20372d]'
+                          : 'border-[#d8cbb8] bg-white/70 text-[#5c4f40] hover:border-[#315d48]',
+                      ].join(' ')}
+                      disabled={recordFeedback.isPending}
+                      key={status}
+                      onClick={() => handleFeedback(candidate, status)}
+                      type="button"
+                    >
+                      {label}
+                    </button>
+                  ))}
+                  {candidate.feedback ? (
+                    <span className="text-xs font-semibold uppercase leading-5 text-[#8a602b]">
+                      Last marked {candidate.feedback.status}
+                      {candidate.feedback.progressPercent !== undefined
+                        ? ` at ${candidate.feedback.progressPercent}%`
+                        : ''}
+                    </span>
+                  ) : null}
+                </div>
+              </div>
+            </article>
+          )
+        })}
       </div>
       {recordFeedback.isError ? (
         <StatusMessage tone="error">
@@ -1532,9 +1621,12 @@ function AdminBooks() {
   const updateBook = useUpdateBook()
   const deleteBook = useDeleteBook()
   const [q, setQ] = useState('')
-  const [outcome, setOutcome] = useState('productivity')
+  const [outcome, setOutcome] = useState('')
   const [eligibleOnly, setEligibleOnly] = useState(false)
+  const [ineligibleOnly, setIneligibleOnly] = useState(false)
   const [statusFilter, setStatusFilter] = useState('')
+  const [styleTagFilter, setStyleTagFilter] = useState('')
+  const [riskTagFilter, setRiskTagFilter] = useState('')
   const [editingBookId, setEditingBookId] = useState('')
   const [bookTitle, setBookTitle] = useState('')
   const [bookAuthorId, setBookAuthorId] = useState('')
@@ -1552,10 +1644,16 @@ function AdminBooks() {
   const [estimatedMinutes, setEstimatedMinutes] = useState(240)
   const booksQuery = useBooks({
     limit: 20,
-    outcome,
+    outcome: outcome || undefined,
     q,
     enrichmentStatus: statusFilter || undefined,
-    recommendationEligible: eligibleOnly ? true : undefined,
+    recommendationEligible: eligibleOnly
+      ? true
+      : ineligibleOnly
+        ? false
+        : undefined,
+    riskTag: riskTagFilter || undefined,
+    styleTag: styleTagFilter || undefined,
   })
   const authorsQuery = useAuthors({ limit: 100 })
 
@@ -1623,6 +1721,37 @@ function AdminBooks() {
     setBookDifficulty('moderate')
     setBookFormat('ebook')
     setEstimatedMinutes(240)
+  }
+
+  function applyReviewQueue(preset: 'imported' | 'needs-review' | 'reviewed') {
+    setQ('')
+    setOutcome('')
+    setStyleTagFilter('')
+    setRiskTagFilter('')
+
+    if (preset === 'reviewed') {
+      setStatusFilter('reviewed')
+      setEligibleOnly(true)
+      setIneligibleOnly(false)
+      return
+    }
+
+    setStatusFilter(preset)
+    setEligibleOnly(false)
+    setIneligibleOnly(true)
+  }
+
+  function saveBookReviewState(
+    book: Book,
+    body: {
+      enrichmentStatus: string
+      recommendationEligible: boolean
+    },
+  ) {
+    updateBook.mutate({
+      bookId: book._id,
+      body,
+    })
   }
 
   const isSavingBook = createBook.isPending || updateBook.isPending
@@ -1779,12 +1908,35 @@ function AdminBooks() {
       </section>
 
       <section className="rounded-md border border-[#d8cbb8] bg-[#fffaf0] p-5">
-        <div className="grid gap-4 md:grid-cols-4">
+        <div className="flex flex-wrap gap-2 border-b border-[#e7dbc8] pb-4">
+          <button
+            className="inline-flex h-9 items-center rounded-md border border-[#d8cbb8] bg-white/70 px-3 text-xs font-semibold text-[#5c4f40] hover:border-[#315d48]"
+            onClick={() => applyReviewQueue('imported')}
+            type="button"
+          >
+            Imported drafts
+          </button>
+          <button
+            className="inline-flex h-9 items-center rounded-md border border-[#d8cbb8] bg-white/70 px-3 text-xs font-semibold text-[#5c4f40] hover:border-[#315d48]"
+            onClick={() => applyReviewQueue('needs-review')}
+            type="button"
+          >
+            Needs review
+          </button>
+          <button
+            className="inline-flex h-9 items-center rounded-md border border-[#d8cbb8] bg-white/70 px-3 text-xs font-semibold text-[#5c4f40] hover:border-[#315d48]"
+            onClick={() => applyReviewQueue('reviewed')}
+            type="button"
+          >
+            Reviewed eligible
+          </button>
+        </div>
+        <div className="mt-4 grid gap-4 md:grid-cols-4">
           <TextField label="Search title" onChange={setQ} value={q} />
           <SelectField
             label="Outcome"
             onChange={setOutcome}
-            options={outcomeOptions}
+            options={[['', 'Any outcome'], ...outcomeOptions]}
             value={outcome}
           />
           <SelectField
@@ -1796,16 +1948,41 @@ function AdminBooks() {
           <CheckboxField
             checked={eligibleOnly}
             label="Eligible only"
-            onChange={setEligibleOnly}
+            onChange={(checked) => {
+              setEligibleOnly(checked)
+              if (checked) {
+                setIneligibleOnly(false)
+              }
+            }}
+          />
+          <CheckboxField
+            checked={ineligibleOnly}
+            label="Drafts only"
+            onChange={(checked) => {
+              setIneligibleOnly(checked)
+              if (checked) {
+                setEligibleOnly(false)
+              }
+            }}
+          />
+          <TextField
+            label="Style tag"
+            onChange={setStyleTagFilter}
+            value={styleTagFilter}
+          />
+          <TextField
+            label="Risk tag"
+            onChange={setRiskTagFilter}
+            value={riskTagFilter}
           />
         </div>
         <div className="mt-5 overflow-hidden rounded-md border border-[#e2d5c2]">
-          <div className="grid grid-cols-[1.1fr_0.7fr_0.7fr_0.8fr_0.7fr] border-b border-[#e7dbc8] bg-[#f6eddd] px-4 py-3 text-xs font-semibold uppercase text-[#74624d]">
+          <div className="grid grid-cols-[1.1fr_0.65fr_0.55fr_0.8fr_1fr] border-b border-[#e7dbc8] bg-[#f6eddd] px-4 py-3 text-xs font-semibold uppercase text-[#74624d]">
             <span>Book</span>
             <span>Status</span>
             <span>Eligible</span>
             <span>Risk tags</span>
-            <span>Actions</span>
+            <span>Review actions</span>
           </div>
           {booksQuery.isLoading ? <TableStatus>Loading books</TableStatus> : null}
           {booksQuery.isError ? (
@@ -1813,14 +1990,14 @@ function AdminBooks() {
           ) : null}
           {booksQuery.data?.items.map((book) => (
             <div
-              className="grid grid-cols-[1.1fr_0.7fr_0.7fr_0.8fr_0.7fr] items-center gap-3 border-b border-[#eee4d6] px-4 py-4 text-sm last:border-b-0"
+              className="grid grid-cols-[1.1fr_0.65fr_0.55fr_0.8fr_1fr] items-center gap-3 border-b border-[#eee4d6] px-4 py-4 text-sm last:border-b-0"
               key={book._id}
             >
               <span className="font-semibold">{book.title}</span>
               <span>{book.enrichmentStatus}</span>
               <span>{book.recommendationEligible ? 'Yes' : 'No'}</span>
               <span>{book.riskTags.join(', ') || 'Unset'}</span>
-              <span className="flex items-center gap-2">
+              <span className="flex flex-wrap items-center gap-2">
                 <button
                   className="inline-flex size-9 items-center justify-center rounded-md border border-[#d8cbb8] bg-white/70 text-[#5c4f40] hover:border-[#315d48]"
                   onClick={() => startBookEdit(book)}
@@ -1828,6 +2005,58 @@ function AdminBooks() {
                   type="button"
                 >
                   <Pencil size={15} />
+                </button>
+                <button
+                  className="inline-flex h-9 items-center rounded-md border border-[#d8cbb8] bg-white/70 px-2 text-xs font-semibold text-[#5c4f40] hover:border-[#315d48] disabled:cursor-not-allowed disabled:opacity-60"
+                  disabled={updateBook.isPending}
+                  onClick={() =>
+                    saveBookReviewState(book, {
+                      enrichmentStatus: 'imported',
+                      recommendationEligible: false,
+                    })
+                  }
+                  type="button"
+                >
+                  Draft
+                </button>
+                <button
+                  className="inline-flex h-9 items-center rounded-md border border-[#d8cbb8] bg-white/70 px-2 text-xs font-semibold text-[#5c4f40] hover:border-[#315d48] disabled:cursor-not-allowed disabled:opacity-60"
+                  disabled={updateBook.isPending}
+                  onClick={() =>
+                    saveBookReviewState(book, {
+                      enrichmentStatus: 'needs-review',
+                      recommendationEligible: false,
+                    })
+                  }
+                  type="button"
+                >
+                  Review
+                </button>
+                <button
+                  className="inline-flex h-9 items-center rounded-md border border-[#adc8b7] bg-[#edf5ef] px-2 text-xs font-semibold text-[#244a37] hover:border-[#315d48] disabled:cursor-not-allowed disabled:opacity-60"
+                  disabled={updateBook.isPending}
+                  onClick={() =>
+                    saveBookReviewState(book, {
+                      enrichmentStatus: 'reviewed',
+                      recommendationEligible: true,
+                    })
+                  }
+                  type="button"
+                >
+                  Approve
+                </button>
+                <button
+                  className="inline-flex h-9 items-center rounded-md border border-[#dfb8a6] bg-white/70 px-2 text-xs font-semibold text-[#7b2f19] hover:border-[#7b2f19] disabled:cursor-not-allowed disabled:opacity-60"
+                  disabled={updateBook.isPending}
+                  onClick={() =>
+                    saveBookReviewState(book, {
+                      enrichmentStatus: 'reviewed',
+                      recommendationEligible: false,
+                    })
+                  }
+                  type="button"
+                >
+                  Exclude
                 </button>
                 <button
                   className="inline-flex size-9 items-center justify-center rounded-md border border-[#dfb8a6] bg-white/70 text-[#7b2f19] hover:border-[#7b2f19] disabled:cursor-not-allowed disabled:opacity-60"
