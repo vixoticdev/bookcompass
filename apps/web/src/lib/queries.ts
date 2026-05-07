@@ -1,11 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
+  createAuthor,
+  createBook,
+  createRecommendationSession,
   createReadingProfile,
   createDnfRecord,
   createReadingEvent,
   getCurrentUser,
   getMyReadingProfile,
   listMyDnfRecords,
+  listMyRecommendationSessions,
   listMyReadingEvents,
   login,
   listAuthors,
@@ -13,8 +17,11 @@ import {
   signup,
   updateMyReadingProfile,
   type AuthInput,
+  type CreateAuthorInput,
+  type CreateBookInput,
   type CreateReadingProfileInput,
   type DnfRecordInput,
+  type RecommendationContext,
   type ReadingEventInput,
   type SignupInput,
 } from './api';
@@ -133,6 +140,53 @@ export function useCreateDnfRecord() {
     mutationFn: (input: DnfRecordInput) => createDnfRecord(input),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['dnf-records', 'me'] });
+    },
+  });
+}
+
+export function useCreateRecommendationSession() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (context: RecommendationContext) =>
+      createRecommendationSession({ context }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: ['recommendation-sessions', 'me'],
+      });
+    },
+  });
+}
+
+export function useMyRecommendationSessions() {
+  return useQuery({
+    queryKey: ['recommendation-sessions', 'me'],
+    queryFn: listMyRecommendationSessions,
+    enabled:
+      typeof window !== 'undefined' &&
+      Boolean(window.localStorage.getItem('bookcompass.accessToken')),
+    retry: false,
+  });
+}
+
+export function useCreateAuthor() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: CreateAuthorInput) => createAuthor(input),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['authors'] });
+    },
+  });
+}
+
+export function useCreateBook() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: CreateBookInput) => createBook(input),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['books'] });
     },
   });
 }

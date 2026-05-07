@@ -22,17 +22,22 @@ import { NavLink, Navigate, Route, Routes } from 'react-router-dom'
 import {
   useAuthors,
   useBooks,
+  useCreateAuthor,
+  useCreateBook,
   useCreateDnfRecord,
+  useCreateRecommendationSession,
   useCreateMyReadingProfile,
   useCreateReadingEvent,
   useCreateReadingIdentity,
   useCurrentUser,
   useLogin,
   useMyDnfRecords,
+  useMyRecommendationSessions,
   useMyReadingEvents,
   useMyReadingProfile,
   useUpdateMyReadingProfile,
 } from './lib/queries'
+import type { RecommendationSession } from './lib/api'
 
 const routes = [
   { to: '/login', label: 'Login', icon: UserRound },
@@ -69,6 +74,49 @@ const outcomeOptions = [
   ['emotional-resilience', 'Emotional resilience'],
   ['persuasion', 'Persuasion'],
   ['technical-learning', 'Technical learning'],
+]
+
+const moodOptions = [
+  ['curious', 'Curious'],
+  ['focused', 'Focused'],
+  ['stressed', 'Stressed'],
+  ['tired', 'Tired'],
+  ['reflective', 'Reflective'],
+  ['motivated', 'Motivated'],
+  ['open', 'Open'],
+]
+
+const energyOptions = [
+  ['low', 'Low'],
+  ['medium', 'Medium'],
+  ['high', 'High'],
+]
+
+const focusOptions = energyOptions
+
+const depthOptions = [
+  ['quick', 'Quick'],
+  ['balanced', 'Balanced'],
+  ['deep', 'Deep'],
+]
+
+const pacingOptions = [
+  ['slow', 'Slow'],
+  ['moderate', 'Moderate'],
+  ['fast', 'Fast'],
+]
+
+const difficultyOptions = [
+  ['easy', 'Easy'],
+  ['moderate', 'Moderate'],
+  ['challenging', 'Challenging'],
+]
+
+const formatOptions = [
+  ['ebook', 'Ebook'],
+  ['paperback', 'Paperback'],
+  ['hardcover', 'Hardcover'],
+  ['audiobook', 'Audiobook'],
 ]
 
 function toList(value: string) {
@@ -881,50 +929,224 @@ function Library() {
 }
 
 function RecommendationStart() {
+  const createSession = useCreateRecommendationSession()
+  const booksQuery = useBooks({ limit: 100 })
+  const [selectedOutcome, setSelectedOutcome] = useState('productivity')
+  const [mood, setMood] = useState('focused')
+  const [energyLevel, setEnergyLevel] = useState('medium')
+  const [focusLevel, setFocusLevel] = useState('high')
+  const [availableMinutes, setAvailableMinutes] = useState(420)
+  const [preferredDepth, setPreferredDepth] = useState('deep')
+  const bookTitleById = useMemo(() => {
+    return new Map(
+      booksQuery.data?.items.map((book) => [book._id, book.title]) ?? [],
+    )
+  }, [booksQuery.data?.items])
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    createSession.mutate({
+      availableMinutes,
+      energyLevel,
+      focusLevel,
+      mood,
+      preferredDepth,
+      selectedOutcome,
+    })
+  }
+
   return (
     <div className="space-y-6">
       <PageHeader
-        description="This flow is the future decision session: it asks what the reader needs now, then creates an explainable recommendation session."
+        description="Create a decision session from the current outcome, mood, energy, focus, time, and depth. The API scores candidates from profile, catalog, behavior, and DNF signals."
         eyebrow="Recommendation session"
         title="Choose for the current reading moment"
       />
 
-      <section className="grid gap-4 md:grid-cols-2">
-        {readingSignals.map((signal) => (
-          <div
-            className="flex min-h-24 items-center justify-between rounded-md border border-[#d8cbb8] bg-[#fffaf0] p-5"
-            key={signal}
-          >
-            <div className="flex items-center gap-3">
-              <Sparkles className="text-[#9b672d]" size={19} />
-              <p className="font-semibold">{signal}</p>
-            </div>
-            <ChevronRight className="text-[#7f735f]" size={18} />
+      <section className="grid gap-4 lg:grid-cols-[1fr_360px]">
+        <form
+          className="rounded-md border border-[#d8cbb8] bg-[#fffaf0] p-5"
+          onSubmit={handleSubmit}
+        >
+          <div className="grid gap-4 sm:grid-cols-2">
+            <SelectField
+              label="Outcome"
+              onChange={setSelectedOutcome}
+              options={outcomeOptions}
+              value={selectedOutcome}
+            />
+            <SelectField
+              label="Mood"
+              onChange={setMood}
+              options={moodOptions}
+              value={mood}
+            />
+            <SelectField
+              label="Energy"
+              onChange={setEnergyLevel}
+              options={energyOptions}
+              value={energyLevel}
+            />
+            <SelectField
+              label="Focus"
+              onChange={setFocusLevel}
+              options={focusOptions}
+              value={focusLevel}
+            />
+            <label className="grid gap-2 text-sm font-semibold">
+              Available minutes
+              <input
+                className="h-11 rounded-md border border-[#cfc0aa] bg-white px-3 text-sm outline-none focus:border-[#315d48]"
+                max={1440}
+                min={1}
+                onChange={(event) =>
+                  setAvailableMinutes(Number(event.target.value))
+                }
+                type="number"
+                value={availableMinutes}
+              />
+            </label>
+            <SelectField
+              label="Depth"
+              onChange={setPreferredDepth}
+              options={depthOptions}
+              value={preferredDepth}
+            />
           </div>
-        ))}
+          <button
+            className="mt-5 inline-flex h-11 items-center gap-2 rounded-md bg-[#2f5d46] px-4 text-sm font-semibold text-[#fffaf0] disabled:cursor-not-allowed disabled:opacity-60"
+            disabled={createSession.isPending}
+            type="submit"
+          >
+            <Compass size={17} />
+            {createSession.isPending ? 'Scoring books' : 'Score recommendations'}
+          </button>
+          {createSession.isError ? (
+            <StatusMessage tone="error">
+              Could not create a recommendation session. Login and complete a
+              profile first.
+            </StatusMessage>
+          ) : null}
+        </form>
+
+        <div className="rounded-md border border-[#d4c3aa] bg-[#efe3cf] p-5">
+          <Sparkles className="text-[#315d48]" size={22} />
+          <h2 className="mt-4 text-xl font-semibold">Scoring inputs</h2>
+          <div className="mt-3 grid gap-2 text-sm text-[#5c4f40]">
+            {readingSignals.map((signal) => (
+              <p className="flex items-center gap-2" key={signal}>
+                <ChevronRight size={15} />
+                {signal}
+              </p>
+            ))}
+          </div>
+        </div>
       </section>
+
+      {createSession.data ? (
+        <RecommendationSessionCard
+          bookTitleById={bookTitleById}
+          session={createSession.data}
+        />
+      ) : null}
     </div>
   )
 }
 
 function RecommendationHistory() {
+  const sessions = useMyRecommendationSessions()
+  const booksQuery = useBooks({ limit: 100 })
+  const bookTitleById = useMemo(() => {
+    return new Map(
+      booksQuery.data?.items.map((book) => [book._id, book.title]) ?? [],
+    )
+  }, [booksQuery.data?.items])
+
   return (
     <div className="space-y-6">
       <PageHeader
-        description="Past sessions will show the selected context, recommended candidates, scoring signals, and user feedback."
+        description="Past sessions show the selected context, ranked candidates, score breakdowns, and explanation lines from the deterministic engine."
         eyebrow="Recommendation history"
         title="Review why each book was suggested"
       />
 
-      <div className="rounded-md border border-dashed border-[#c9b79e] bg-[#fffaf0] p-8 text-center">
-        <BookOpenCheck className="mx-auto text-[#315d48]" size={28} />
-        <p className="mt-3 font-semibold">No sessions yet</p>
-        <p className="mt-2 text-sm text-[#62584a]">
-          Recommendation scoring starts after the catalog and identity flows are
-          ready.
-        </p>
+      {sessions.isLoading ? <TableStatus>Loading sessions</TableStatus> : null}
+      {sessions.isError ? (
+        <TableStatus>Login to review recommendation history</TableStatus>
+      ) : null}
+      {sessions.data?.length === 0 ? (
+        <div className="rounded-md border border-dashed border-[#c9b79e] bg-[#fffaf0] p-8 text-center">
+          <BookOpenCheck className="mx-auto text-[#315d48]" size={28} />
+          <p className="mt-3 font-semibold">No sessions yet</p>
+          <p className="mt-2 text-sm text-[#62584a]">
+            Create a recommendation session to persist scored candidates.
+          </p>
+        </div>
+      ) : null}
+      <div className="grid gap-4">
+        {sessions.data?.map((session) => (
+          <RecommendationSessionCard
+            bookTitleById={bookTitleById}
+            key={session._id}
+            session={session}
+          />
+        ))}
       </div>
     </div>
+  )
+}
+
+function RecommendationSessionCard({
+  bookTitleById,
+  session,
+}: {
+  bookTitleById: Map<string, string>
+  session: RecommendationSession
+}) {
+  const topCandidates = session.candidates.slice(0, 3)
+
+  return (
+    <section className="rounded-md border border-[#d8cbb8] bg-[#fffaf0] p-5">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#e7dbc8] pb-3">
+        <div>
+          <p className="text-sm font-semibold uppercase text-[#8a602b]">
+            {session.context.selectedOutcome}
+          </p>
+          <h2 className="mt-1 text-xl font-semibold">
+            {session.status} recommendation session
+          </h2>
+        </div>
+        <p className="text-sm text-[#62584a]">
+          {session.context.mood} mood · {session.context.availableMinutes} min ·{' '}
+          {session.context.preferredDepth}
+        </p>
+      </div>
+      {topCandidates.length === 0 ? (
+        <TableStatus>No scored candidates matched this context</TableStatus>
+      ) : null}
+      <div className="grid gap-3 pt-4">
+        {topCandidates.map((candidate) => (
+          <article
+            className="rounded-md border border-[#e2d5c2] bg-white/60 p-4"
+            key={candidate.bookId}
+          >
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="font-semibold">
+                {bookTitleById.get(candidate.bookId) ?? candidate.bookId}
+              </h3>
+              <span className="rounded-md bg-[#e5eee7] px-2 py-1 text-sm font-semibold text-[#20372d]">
+                {candidate.finalScore}
+              </span>
+            </div>
+            <div className="mt-3 grid gap-2 text-sm text-[#5c4f40]">
+              {candidate.explanation.map((line) => (
+                <p key={line}>{line}</p>
+              ))}
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
   )
 }
 
@@ -954,17 +1176,195 @@ function AdminHome() {
 }
 
 function AdminBooks() {
+  const createAuthor = useCreateAuthor()
+  const createBook = useCreateBook()
   const [q, setQ] = useState('')
   const [outcome, setOutcome] = useState('productivity')
+  const [authorName, setAuthorName] = useState('')
+  const [authorGenres, setAuthorGenres] = useState('Business, Productivity')
+  const [authorOutcome, setAuthorOutcome] = useState('productivity')
+  const [bookTitle, setBookTitle] = useState('')
+  const [bookAuthorId, setBookAuthorId] = useState('')
+  const [bookGenres, setBookGenres] = useState('Business, Productivity')
+  const [bookOutcome, setBookOutcome] = useState('productivity')
+  const [bookDepth, setBookDepth] = useState('balanced')
+  const [bookPacing, setBookPacing] = useState('moderate')
+  const [bookDifficulty, setBookDifficulty] = useState('moderate')
+  const [bookFormat, setBookFormat] = useState('ebook')
+  const [estimatedMinutes, setEstimatedMinutes] = useState(240)
   const booksQuery = useBooks({ limit: 20, outcome, q })
+  const authorsQuery = useAuthors({ limit: 100 })
+
+  useEffect(() => {
+    if (!bookAuthorId && authorsQuery.data?.items[0]?._id) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setBookAuthorId(authorsQuery.data.items[0]._id)
+    }
+  }, [authorsQuery.data?.items, bookAuthorId])
+
+  function handleAuthorCreate(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    createAuthor.mutate({
+      knownForGenres: toList(authorGenres),
+      name: authorName,
+      outcomeStrengths: [authorOutcome],
+    })
+  }
+
+  function handleBookCreate(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    createBook.mutate({
+      authorId: bookAuthorId,
+      depth: bookDepth,
+      difficulty: bookDifficulty,
+      estimatedMinutes,
+      formats: [bookFormat],
+      genres: toList(bookGenres),
+      outcomeTags: [bookOutcome],
+      pacing: bookPacing,
+      title: bookTitle,
+    })
+  }
 
   return (
     <div className="space-y-6">
       <PageHeader
-        description="Catalog administration uses the new API filters to review seeded records by outcome, search text, depth, pacing, and difficulty."
+        description="Catalog administration uses guarded author and book create flows plus API filters for reviewing seeded records."
         eyebrow="Admin catalog"
         title="Review the seeded catalog from Atlas"
       />
+
+      <section className="grid gap-4 xl:grid-cols-2">
+        <form
+          className="rounded-md border border-[#d8cbb8] bg-[#fffaf0] p-5"
+          onSubmit={handleAuthorCreate}
+        >
+          <h2 className="text-lg font-semibold">Create author</h2>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            <TextField label="Name" onChange={setAuthorName} value={authorName} />
+            <TextField
+              label="Known genres"
+              onChange={setAuthorGenres}
+              value={authorGenres}
+            />
+            <SelectField
+              label="Outcome strength"
+              onChange={setAuthorOutcome}
+              options={outcomeOptions}
+              value={authorOutcome}
+            />
+          </div>
+          <button
+            className="mt-5 inline-flex h-11 items-center gap-2 rounded-md bg-[#2f5d46] px-4 text-sm font-semibold text-[#fffaf0] disabled:cursor-not-allowed disabled:opacity-60"
+            disabled={createAuthor.isPending || authorName.trim().length < 2}
+            type="submit"
+          >
+            <BookMarked size={17} />
+            {createAuthor.isPending ? 'Creating author' : 'Create author'}
+          </button>
+          {createAuthor.isSuccess ? (
+            <StatusMessage tone="success">
+              Created {createAuthor.data.name}.
+            </StatusMessage>
+          ) : null}
+          {createAuthor.isError ? (
+            <StatusMessage tone="error">
+              Author creation requires an admin session.
+            </StatusMessage>
+          ) : null}
+        </form>
+
+        <form
+          className="rounded-md border border-[#d8cbb8] bg-[#fffaf0] p-5"
+          onSubmit={handleBookCreate}
+        >
+          <h2 className="text-lg font-semibold">Create book</h2>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            <TextField label="Title" onChange={setBookTitle} value={bookTitle} />
+            <SelectField
+              label="Author"
+              onChange={setBookAuthorId}
+              options={
+                authorsQuery.data?.items.map((author) => [
+                  author._id,
+                  author.name,
+                ]) ?? []
+              }
+              value={bookAuthorId}
+            />
+            <TextField
+              label="Genres"
+              onChange={setBookGenres}
+              value={bookGenres}
+            />
+            <SelectField
+              label="Outcome"
+              onChange={setBookOutcome}
+              options={outcomeOptions}
+              value={bookOutcome}
+            />
+            <SelectField
+              label="Depth"
+              onChange={setBookDepth}
+              options={depthOptions}
+              value={bookDepth}
+            />
+            <SelectField
+              label="Pacing"
+              onChange={setBookPacing}
+              options={pacingOptions}
+              value={bookPacing}
+            />
+            <SelectField
+              label="Difficulty"
+              onChange={setBookDifficulty}
+              options={difficultyOptions}
+              value={bookDifficulty}
+            />
+            <SelectField
+              label="Format"
+              onChange={setBookFormat}
+              options={formatOptions}
+              value={bookFormat}
+            />
+            <label className="grid gap-2 text-sm font-semibold">
+              Estimated minutes
+              <input
+                className="h-11 rounded-md border border-[#cfc0aa] bg-white px-3 text-sm outline-none focus:border-[#315d48]"
+                min={1}
+                onChange={(event) =>
+                  setEstimatedMinutes(Number(event.target.value))
+                }
+                type="number"
+                value={estimatedMinutes}
+              />
+            </label>
+          </div>
+          <button
+            className="mt-5 inline-flex h-11 items-center gap-2 rounded-md bg-[#2f5d46] px-4 text-sm font-semibold text-[#fffaf0] disabled:cursor-not-allowed disabled:opacity-60"
+            disabled={
+              createBook.isPending ||
+              bookTitle.trim().length === 0 ||
+              !bookAuthorId
+            }
+            type="submit"
+          >
+            <BookMarked size={17} />
+            {createBook.isPending ? 'Creating book' : 'Create book'}
+          </button>
+          {createBook.isSuccess ? (
+            <StatusMessage tone="success">
+              Created {createBook.data.title}.
+            </StatusMessage>
+          ) : null}
+          {createBook.isError ? (
+            <StatusMessage tone="error">
+              Book creation requires an admin session and a unique title-author
+              pair.
+            </StatusMessage>
+          ) : null}
+        </form>
+      </section>
 
       <section className="rounded-md border border-[#d8cbb8] bg-[#fffaf0] p-5">
         <div className="grid gap-4 md:grid-cols-[1fr_260px]">
