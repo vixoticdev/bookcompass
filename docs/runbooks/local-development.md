@@ -59,3 +59,13 @@ Web:
 ```bash
 npm run check
 ```
+
+## Day 13 Live Smoke
+
+With Docker MongoDB/API running and an admin bootstrapped, run:
+
+```bash
+ADMIN_EMAIL=admin@example.com ADMIN_PASSWORD=change-me npm run smoke:day13
+```
+
+The smoke script verifies the API contracts behind `/admin/authors`, imported book review queues, book eligibility toggles, recommendation feedback note/progress capture, and `/profile/history`.

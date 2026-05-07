@@ -26,6 +26,7 @@
 - Day 9 adds first-pass deterministic recommendation scoring and reader-owned recommendation history through `GET /recommendation-sessions/me`.
 - Day 10 adds authenticated candidate feedback capture through `POST /recommendation-sessions/:sessionId/feedback` and maps feedback into reading events for future scoring.
 - Day 11 expands catalog CRUD with detail reads plus admin-only update and delete paths for authors and books.
+- Day 13 adds `npm run smoke:day13` for live API coverage behind `/admin/authors`, catalog review queue states, recommendation feedback note/progress capture, and `/profile/history` hydration.
 - Initial catalog seed script exists at `npm run seed --workspace @bookcompass/api`.
 - First admin bootstrap script exists at `npm run bootstrap:admin --workspace @bookcompass/api` and reads `ADMIN_EMAIL`, `ADMIN_PASSWORD`, and optional `ADMIN_DISPLAY_NAME`.
 - The Day 6 manual catalog batch expands the repeatable seed to 25 authors and 27 books for local exploration.
@@ -70,6 +71,7 @@ Profile ownership:
 - `GET /reading-events/me` and `GET /dnf-records/me` return only the authenticated reader's behavior history.
 - `GET /recommendation-sessions/me` returns only the authenticated reader's scored recommendation sessions.
 - `POST /recommendation-sessions/:sessionId/feedback` updates only candidates inside the authenticated reader's own session and writes a reusable reading event from the feedback status.
+- Recommendation feedback accepts optional `progressPercent` and `note`; those values are persisted on the candidate feedback and copied into the derived reading event.
 - Public `POST /users` forces `role: reader`; admin creation must not be exposed through self-service signup.
 
 Catalog filters added on Day 3 and paginated on Day 4:
@@ -168,6 +170,11 @@ Day 12 catalog review fields:
 - Books now store `recommendationEligible`, `styleTags`, and `riskTags`.
 - `GET /books` can filter by `enrichmentStatus`, `recommendationEligible`, `styleTag`, and `riskTag`.
 - Recommendation input generation requests only `recommendationEligible: true` candidates.
+
+Day 13 live smoke:
+
+- `npm run smoke:day13` expects `ADMIN_EMAIL` and `ADMIN_PASSWORD` for an existing admin.
+- The script creates a temporary reader, author, and imported draft book; verifies author listing, imported draft filtering, eligibility approval filtering, feedback note/progress persistence, profile-history backing reads, and then deletes the temporary catalog records.
 
 ## Documentation Rule
 

@@ -14,6 +14,8 @@ Day 9 adds first-pass deterministic scoring. `POST /recommendation-sessions` now
 
 Day 10 adds the first feedback loop. `POST /recommendation-sessions/:sessionId/feedback` records accepted, rejected, started, completed, or abandoned status on a candidate in the authenticated reader's own session, then writes a reading event so later scoring can reuse the outcome.
 
+Day 13 exposes the full MVP feedback payload in the frontend. Readers can attach optional progress percentage and notes to recommendation feedback, and those details are preserved in recommendation history and the derived behavior event.
+
 ## Inputs
 
 - reading profile
@@ -75,6 +77,7 @@ Feedback capture must preserve:
 
 - which candidate book received feedback
 - whether the reader accepted, rejected, started, completed, or abandoned it
+- optional progress percentage and note from the reader
 - when feedback was recorded
 - enough behavior-event data for later scoring and analytics
 

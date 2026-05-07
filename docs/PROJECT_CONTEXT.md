@@ -258,6 +258,9 @@ As of 2026-05-07:
 - Project workflow now requires a new daily branch for every development session, explicit unit tests with edge-case coverage, intensive validation before completion, and GitHub pushes only after all checks pass.
 - Frontend session state hydrates from `GET /auth/me` when a local bearer token exists.
 - `/onboarding` can now update an existing authenticated profile and capture first reading behavior signals for liked, disliked, completed, saved, and DNF patterns.
+- Recommendation history cards now capture and hydrate candidate feedback progress percentages and notes.
+- `/admin/books` now has catalog review queue presets for imported drafts, needs-review drafts, and reviewed eligible books, plus quick saved review states for draft, review, approve, and exclude.
+- `npm run smoke:day13` provides repeatable live API smoke coverage for `/admin/authors`, book eligibility review toggles, recommendation feedback note/progress persistence, and `/profile/history` backing reads.
 - Frontend reading identity is split across `/onboarding/signup`, `/onboarding/preferences`, and `/onboarding/signals`.
 - `/onboarding/signals` now displays reader-owned reading event and DNF history.
 - `/recommendations/new` now creates scored recommendation sessions from current decision context.
@@ -765,6 +768,35 @@ Recommended Day 13 implementation target:
 - Add frontend controls for recommendation feedback note/progress capture.
 - Add catalog review queue filters and saved review states for imported draft records.
 - Add live smoke coverage for `/admin/authors`, book eligibility toggles, and `/profile/history`.
+
+### Day 13: 2026-05-07
+
+Goal: expose detailed recommendation feedback, add catalog review queue workflow controls, and make the route contracts smoke-testable.
+
+Branch: `day13-2026-05-07-feedback-review-smoke`
+
+Completed:
+
+- Added frontend recommendation feedback controls for optional progress percentage and note capture.
+- Existing candidate feedback progress/note values now hydrate into recommendation history cards.
+- Expanded `/admin/books` filters with imported draft, needs-review, reviewed eligible, style tag, risk tag, eligible-only, and draft-only queue controls.
+- Added quick saved review states for imported draft, needs-review draft, reviewed eligible, and reviewed excluded catalog records.
+- Added `npm run smoke:day13` with live coverage for admin author listing, imported draft filtering, book eligibility approval, recommendation feedback note/progress persistence, and profile-history backing reads.
+- Updated backend, frontend, admin dashboard, recommendation engine, local development runbook, project context, and release documentation.
+
+Validation:
+
+- `npm run check`
+- `npm run test --workspace @bookcompass/api -- recommendations books --runInBand`
+- `npm run test --workspace @bookcompass/api -- --runInBand`
+- `npm run test:e2e --workspace @bookcompass/api`
+- `ADMIN_EMAIL=<local-day13-admin> ADMIN_PASSWORD=<local-smoke-password> npm run smoke:day13`
+
+Recommended Day 14 implementation target:
+
+- Add frontend smoke or component-level coverage around the recommendation feedback and admin review queue UI.
+- Add admin analytics for review queue counts and candidate feedback outcomes.
+- Add pagination controls to admin book review queues before imported drafts scale beyond the first page.
 
 ## Month-One Timeline
 

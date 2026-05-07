@@ -150,6 +150,14 @@ Day 12 profile history and admin split:
 - Book admin controls now include enrichment status, recommendation eligibility, style tags, and risk tags.
 - Book list filters now include enrichment status and an eligible-only toggle.
 
+Day 13 feedback detail and review queues:
+
+- Recommendation session cards now capture optional feedback progress percentage and a note before posting accepted, rejected, started, completed, or abandoned feedback.
+- Existing candidate feedback progress/note values hydrate into the card controls when history is reloaded.
+- `/admin/books` now has queue presets for imported drafts, needs-review drafts, and reviewed eligible records.
+- `/admin/books` now supports style-tag, risk-tag, eligible-only, and draft-only filter combinations.
+- Book rows now include quick saved review states for draft, needs review, approved, and excluded records, backed by `PATCH /books/:bookId`.
+
 Browser metadata:
 
 - The browser tab favicon uses `public/bookcompass-icon.png`.
@@ -160,7 +168,7 @@ Browser metadata:
 - `GET /authors?limit=100`
 - `GET /books?limit=25`
 - `GET /books?limit=20&outcome=&q=`
-- `GET /books?limit=20&outcome=&q=&enrichmentStatus=&recommendationEligible=`
+- `GET /books?limit=20&outcome=&q=&enrichmentStatus=&recommendationEligible=&styleTag=&riskTag=`
 - `POST /auth/signup`
 - `POST /auth/login`
 - `GET /auth/me`
