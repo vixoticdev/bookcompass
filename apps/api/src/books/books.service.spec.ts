@@ -50,6 +50,8 @@ describe('buildBookFilters', () => {
 
 describe('BooksService catalog mutations', () => {
   const bookModel = {
+    aggregate: jest.fn(),
+    countDocuments: jest.fn(),
     findById: jest.fn(),
     findByIdAndUpdate: jest.fn(),
     findByIdAndDelete: jest.fn(),
@@ -116,5 +118,33 @@ describe('BooksService catalog mutations', () => {
 
     await expect(service.deleteById('book-1')).resolves.toBe(deletedBook);
     expect(bookModel.findByIdAndDelete.mock.calls[0]).toEqual(['book-1']);
+  });
+
+  it('summarizes review queue analytics by eligibility and enrichment status', async () => {
+    bookModel.countDocuments
+      .mockReturnValueOnce({ exec: jest.fn().mockResolvedValue(9) })
+      .mockReturnValueOnce({ exec: jest.fn().mockResolvedValue(4) });
+    bookModel.aggregate.mockReturnValue({
+      exec: jest.fn().mockResolvedValue([
+        { _id: 'imported', count: 3 },
+        { _id: 'needs-review', count: 2 },
+        { _id: 'reviewed', count: 4 },
+      ]),
+    });
+
+    await expect(service.getReviewAnalytics()).resolves.toEqual({
+      total: 9,
+      eligible: 4,
+      ineligible: 5,
+      byEnrichmentStatus: {
+        imported: 3,
+        'needs-review': 2,
+        reviewed: 4,
+      },
+    });
+    expect(bookModel.countDocuments.mock.calls).toEqual([
+      [{}],
+      [{ recommendationEligible: true }],
+    ]);
   });
 });

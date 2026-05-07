@@ -14,6 +14,7 @@ type CreatedRecommendationSession = {
 
 describe('RecommendationsService', () => {
   const recommendationSessionModel = {
+    aggregate: jest.fn(),
     create: jest.fn(),
     find: jest.fn(),
     findOneAndUpdate: jest.fn(),
@@ -30,6 +31,7 @@ describe('RecommendationsService', () => {
   };
   const booksService = {
     findAll: jest.fn(),
+    getReviewAnalytics: jest.fn(),
   };
 
   let service: RecommendationsService;
@@ -260,6 +262,51 @@ describe('RecommendationsService', () => {
       { userId: 'user-1' },
     ]);
     expect(sort.mock.calls[0]).toEqual([{ createdAt: -1 }]);
+  });
+
+  it('summarizes admin analytics for catalog review and candidate feedback outcomes', async () => {
+    const catalogReview = {
+      total: 12,
+      eligible: 5,
+      ineligible: 7,
+      byEnrichmentStatus: {
+        imported: 4,
+        'needs-review': 3,
+        reviewed: 5,
+      },
+    };
+    booksService.getReviewAnalytics.mockResolvedValue(catalogReview);
+    recommendationSessionModel.aggregate.mockReturnValue({
+      exec: jest.fn().mockResolvedValue([
+        { _id: 'accepted', count: 2 },
+        { _id: 'completed', count: 1 },
+        { _id: 'abandoned', count: 3 },
+      ]),
+    });
+
+    await expect(service.getAdminAnalytics()).resolves.toEqual({
+      catalogReview,
+      candidateFeedback: {
+        totalRecorded: 6,
+        byStatus: {
+          accepted: 2,
+          completed: 1,
+          abandoned: 3,
+        },
+      },
+    });
+    const aggregateCalls = recommendationSessionModel.aggregate.mock
+      .calls as Array<[unknown[]]>;
+    expect(aggregateCalls[0][0]).toEqual([
+      { $unwind: '$candidates' },
+      { $match: { 'candidates.feedback.status': { $exists: true } } },
+      {
+        $group: {
+          _id: '$candidates.feedback.status',
+          count: { $sum: 1 },
+        },
+      },
+    ]);
   });
 
   it('records feedback on a reader-owned candidate and creates a reusable behavior event', async () => {
