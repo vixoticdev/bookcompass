@@ -57,11 +57,13 @@ const routes = [
   { to: '/onboarding/signup', label: 'Signup', icon: UserRound },
   { to: '/onboarding/preferences', label: 'Profile', icon: Gauge },
   { to: '/onboarding/signals', label: 'Signals', icon: BookOpenCheck },
+  { to: '/profile/history', label: 'Reader history', icon: ListChecks },
   { to: '/library', label: 'Library', icon: LibraryBig },
   { to: '/recommendations/new', label: 'Recommend', icon: Compass },
   { to: '/recommendations/history', label: 'History', icon: ListChecks },
   { to: '/admin', label: 'Admin', icon: Settings2 },
-  { to: '/admin/books', label: 'Catalog', icon: BookMarked },
+  { to: '/admin/authors', label: 'Authors', icon: UserRound },
+  { to: '/admin/books', label: 'Books', icon: BookMarked },
 ]
 
 const readingSignals = [
@@ -130,6 +132,13 @@ const formatOptions = [
   ['paperback', 'Paperback'],
   ['hardcover', 'Hardcover'],
   ['audiobook', 'Audiobook'],
+]
+
+const enrichmentStatusOptions = [
+  ['seeded', 'Seeded'],
+  ['imported', 'Imported'],
+  ['reviewed', 'Reviewed'],
+  ['needs-review', 'Needs review'],
 ]
 
 const feedbackActions: Array<[RecommendationFeedbackStatus, string]> = [
@@ -216,6 +225,7 @@ function Shell() {
                 path="/onboarding/preferences"
               />
               <Route element={<BehaviorCapture />} path="/onboarding/signals" />
+              <Route element={<ReaderProfileHistory />} path="/profile/history" />
               <Route element={<Library />} path="/library" />
               <Route element={<RecommendationStart />} path="/recommendations/new" />
               <Route
@@ -223,6 +233,7 @@ function Shell() {
                 path="/recommendations/history"
               />
               <Route element={<AdminHome />} path="/admin" />
+              <Route element={<AdminAuthors />} path="/admin/authors" />
               <Route element={<AdminBooks />} path="/admin/books" />
             </Routes>
           </section>
@@ -301,6 +312,28 @@ function SelectField({
           </option>
         ))}
       </select>
+    </label>
+  )
+}
+
+function CheckboxField({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string
+  checked: boolean
+  onChange: (checked: boolean) => void
+}) {
+  return (
+    <label className="flex h-11 items-center gap-3 rounded-md border border-[#cfc0aa] bg-white px-3 text-sm font-semibold">
+      <input
+        checked={checked}
+        className="size-4 accent-[#315d48]"
+        onChange={(event) => onChange(event.target.checked)}
+        type="checkbox"
+      />
+      {label}
     </label>
   )
 }
@@ -851,6 +884,103 @@ function BehaviorHistoryTable({
   )
 }
 
+function ReaderProfileHistory() {
+  const currentUser = useCurrentUser()
+  const profile = useMyReadingProfile()
+  const readingEvents = useMyReadingEvents()
+  const dnfRecords = useMyDnfRecords()
+  const sessions = useMyRecommendationSessions()
+  const booksQuery = useBooks({ limit: 100 })
+  const bookTitleById = useMemo(() => {
+    return new Map(
+      booksQuery.data?.items.map((book) => [book._id, book.title]) ?? [],
+    )
+  }, [booksQuery.data?.items])
+
+  const feedbackRows =
+    sessions.data?.flatMap((session) =>
+      session.candidates
+        .filter((candidate) => candidate.feedback)
+        .map((candidate) => [
+          candidate.feedback?.status ?? 'feedback',
+          bookTitleById.get(candidate.bookId) ?? candidate.bookId,
+          session.context.selectedOutcome,
+        ]),
+    ) ?? []
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        description="A consolidated reader view for preferences, behavior signals, DNF records, and recommendation feedback."
+        eyebrow="Reader profile"
+        title="Review the current reading identity"
+      />
+
+      <section className="grid gap-4 lg:grid-cols-3">
+        <article className="rounded-md border border-[#d8cbb8] bg-[#fffaf0] p-5">
+          <UserRound className="text-[#315d48]" size={20} />
+          <h2 className="mt-4 text-lg font-semibold">Session</h2>
+          <p className="mt-2 text-sm text-[#62584a]">
+            {currentUser.data
+              ? `${currentUser.data.displayName} · ${currentUser.data.email}`
+              : 'Login to hydrate the current reader.'}
+          </p>
+        </article>
+        <article className="rounded-md border border-[#d8cbb8] bg-[#fffaf0] p-5">
+          <Gauge className="text-[#315d48]" size={20} />
+          <h2 className="mt-4 text-lg font-semibold">Preferences</h2>
+          <p className="mt-2 text-sm text-[#62584a]">
+            {profile.data?.targetOutcomes?.join(', ') || 'No outcome profile yet'}
+          </p>
+          <p className="mt-2 text-sm text-[#62584a]">
+            {profile.data
+              ? `${profile.data.preferredDepth ?? 'balanced'} depth · ${profile.data.dailyReadingMinutes ?? 30} min/day`
+              : 'Complete preferences to tune scoring.'}
+          </p>
+        </article>
+        <article className="rounded-md border border-[#d8cbb8] bg-[#fffaf0] p-5">
+          <ListChecks className="text-[#315d48]" size={20} />
+          <h2 className="mt-4 text-lg font-semibold">History</h2>
+          <p className="mt-2 text-sm text-[#62584a]">
+            {readingEvents.data?.length ?? 0} events · {dnfRecords.data?.length ?? 0}{' '}
+            DNF records · {feedbackRows.length} feedback marks
+          </p>
+        </article>
+      </section>
+
+      <section className="grid gap-4 xl:grid-cols-3">
+        <BehaviorHistoryTable
+          emptyLabel="No reading events yet"
+          rows={
+            readingEvents.data?.map((event) => [
+              event.eventType,
+              bookTitleById.get(event.bookId) ?? event.bookId,
+              event.progressPercent ? `${event.progressPercent}%` : 'Signal',
+            ]) ?? []
+          }
+          title="Reading events"
+        />
+        <BehaviorHistoryTable
+          emptyLabel="No DNF records yet"
+          rows={
+            dnfRecords.data?.map((record) => [
+              record.reason,
+              bookTitleById.get(record.bookId) ?? record.bookId,
+              `${record.stoppedAtPercent}%`,
+            ]) ?? []
+          }
+          title="DNF records"
+        />
+        <BehaviorHistoryTable
+          emptyLabel="No recommendation feedback yet"
+          rows={feedbackRows}
+          title="Recommendation feedback"
+        />
+      </section>
+    </div>
+  )
+}
+
 function Login() {
   const login = useLogin()
   const [email, setEmail] = useState('reader@bookcompass.local')
@@ -1236,38 +1366,15 @@ function AdminHome() {
   )
 }
 
-function AdminBooks() {
+function AdminAuthors() {
   const createAuthor = useCreateAuthor()
   const updateAuthor = useUpdateAuthor()
   const deleteAuthor = useDeleteAuthor()
-  const createBook = useCreateBook()
-  const updateBook = useUpdateBook()
-  const deleteBook = useDeleteBook()
-  const [q, setQ] = useState('')
-  const [outcome, setOutcome] = useState('productivity')
-  const [editingAuthorId, setEditingAuthorId] = useState('')
+  const authorsQuery = useAuthors({ limit: 100 })
   const [authorName, setAuthorName] = useState('')
   const [authorGenres, setAuthorGenres] = useState('Business, Productivity')
   const [authorOutcome, setAuthorOutcome] = useState('productivity')
-  const [editingBookId, setEditingBookId] = useState('')
-  const [bookTitle, setBookTitle] = useState('')
-  const [bookAuthorId, setBookAuthorId] = useState('')
-  const [bookGenres, setBookGenres] = useState('Business, Productivity')
-  const [bookOutcome, setBookOutcome] = useState('productivity')
-  const [bookDepth, setBookDepth] = useState('balanced')
-  const [bookPacing, setBookPacing] = useState('moderate')
-  const [bookDifficulty, setBookDifficulty] = useState('moderate')
-  const [bookFormat, setBookFormat] = useState('ebook')
-  const [estimatedMinutes, setEstimatedMinutes] = useState(240)
-  const booksQuery = useBooks({ limit: 20, outcome, q })
-  const authorsQuery = useAuthors({ limit: 100 })
-
-  useEffect(() => {
-    if (!bookAuthorId && authorsQuery.data?.items[0]?._id) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setBookAuthorId(authorsQuery.data.items[0]._id)
-    }
-  }, [authorsQuery.data?.items, bookAuthorId])
+  const [editingAuthorId, setEditingAuthorId] = useState('')
 
   function handleAuthorCreate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -1285,28 +1392,6 @@ function AdminBooks() {
     createAuthor.mutate(payload)
   }
 
-  function handleBookCreate(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    const payload = {
-      authorId: bookAuthorId,
-      depth: bookDepth,
-      difficulty: bookDifficulty,
-      estimatedMinutes,
-      formats: [bookFormat],
-      genres: toList(bookGenres),
-      outcomeTags: [bookOutcome],
-      pacing: bookPacing,
-      title: bookTitle,
-    }
-
-    if (editingBookId) {
-      updateBook.mutate({ bookId: editingBookId, body: payload })
-      return
-    }
-
-    createBook.mutate(payload)
-  }
-
   function startAuthorEdit(author: Author) {
     setEditingAuthorId(author._id)
     setAuthorName(author.name)
@@ -1321,12 +1406,202 @@ function AdminBooks() {
     setAuthorOutcome('productivity')
   }
 
+  const isSavingAuthor = createAuthor.isPending || updateAuthor.isPending
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        description="Author administration is separate from book catalog review so source records, genre strengths, and outcome strengths stay easier to scan."
+        eyebrow="Admin authors"
+        title="Manage author metadata"
+      />
+
+      <form
+        className="rounded-md border border-[#d8cbb8] bg-[#fffaf0] p-5"
+        onSubmit={handleAuthorCreate}
+      >
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold">
+            {editingAuthorId ? 'Edit author' : 'Create author'}
+          </h2>
+          {editingAuthorId ? (
+            <button
+              className="inline-flex size-9 items-center justify-center rounded-md border border-[#d8cbb8] bg-white/70 text-[#5c4f40] hover:border-[#315d48]"
+              onClick={resetAuthorForm}
+              title="Cancel author edit"
+              type="button"
+            >
+              <X size={16} />
+            </button>
+          ) : null}
+        </div>
+        <div className="mt-4 grid gap-4 sm:grid-cols-3">
+          <TextField label="Name" onChange={setAuthorName} value={authorName} />
+          <TextField
+            label="Known genres"
+            onChange={setAuthorGenres}
+            value={authorGenres}
+          />
+          <SelectField
+            label="Outcome strength"
+            onChange={setAuthorOutcome}
+            options={outcomeOptions}
+            value={authorOutcome}
+          />
+        </div>
+        <button
+          className="mt-5 inline-flex h-11 items-center gap-2 rounded-md bg-[#2f5d46] px-4 text-sm font-semibold text-[#fffaf0] disabled:cursor-not-allowed disabled:opacity-60"
+          disabled={isSavingAuthor || authorName.trim().length < 2}
+          type="submit"
+        >
+          <UserRound size={17} />
+          {isSavingAuthor
+            ? 'Saving author'
+            : editingAuthorId
+              ? 'Update author'
+              : 'Create author'}
+        </button>
+        {createAuthor.isSuccess ? (
+          <StatusMessage tone="success">Created {createAuthor.data.name}.</StatusMessage>
+        ) : null}
+        {createAuthor.isError ? (
+          <StatusMessage tone="error">
+            Author creation requires an admin session.
+          </StatusMessage>
+        ) : null}
+        {updateAuthor.isSuccess ? (
+          <StatusMessage tone="success">Updated {updateAuthor.data.name}.</StatusMessage>
+        ) : null}
+        {updateAuthor.isError || deleteAuthor.isError ? (
+          <StatusMessage tone="error">
+            Author changes require an admin session and an existing record.
+          </StatusMessage>
+        ) : null}
+      </form>
+
+      <section className="rounded-md border border-[#d8cbb8] bg-[#fffaf0] p-5">
+        <h2 className="text-lg font-semibold">Author operations</h2>
+        <div className="mt-4 overflow-hidden rounded-md border border-[#e2d5c2]">
+          <div className="grid grid-cols-[1fr_1fr_0.7fr] border-b border-[#e7dbc8] bg-[#f6eddd] px-4 py-3 text-xs font-semibold uppercase text-[#74624d]">
+            <span>Author</span>
+            <span>Genres</span>
+            <span>Actions</span>
+          </div>
+          {authorsQuery.isLoading ? (
+            <TableStatus>Loading authors</TableStatus>
+          ) : null}
+          {authorsQuery.isError ? (
+            <TableStatus>Could not load author data</TableStatus>
+          ) : null}
+          {authorsQuery.data?.items.map((author) => (
+            <div
+              className="grid grid-cols-[1fr_1fr_0.7fr] items-center gap-3 border-b border-[#eee4d6] px-4 py-4 text-sm last:border-b-0"
+              key={author._id}
+            >
+              <span className="font-semibold">{author.name}</span>
+              <span>{author.knownForGenres.join(', ') || 'Unset'}</span>
+              <span className="flex items-center gap-2">
+                <button
+                  className="inline-flex size-9 items-center justify-center rounded-md border border-[#d8cbb8] bg-white/70 text-[#5c4f40] hover:border-[#315d48]"
+                  onClick={() => startAuthorEdit(author)}
+                  title="Edit author"
+                  type="button"
+                >
+                  <Pencil size={15} />
+                </button>
+                <button
+                  className="inline-flex size-9 items-center justify-center rounded-md border border-[#dfb8a6] bg-white/70 text-[#7b2f19] hover:border-[#7b2f19] disabled:cursor-not-allowed disabled:opacity-60"
+                  disabled={deleteAuthor.isPending}
+                  onClick={() => deleteAuthor.mutate(author._id)}
+                  title="Delete author"
+                  type="button"
+                >
+                  <Trash2 size={15} />
+                </button>
+              </span>
+            </div>
+          ))}
+        </div>
+      </section>
+    </div>
+  )
+}
+
+function AdminBooks() {
+  const createBook = useCreateBook()
+  const updateBook = useUpdateBook()
+  const deleteBook = useDeleteBook()
+  const [q, setQ] = useState('')
+  const [outcome, setOutcome] = useState('productivity')
+  const [eligibleOnly, setEligibleOnly] = useState(false)
+  const [statusFilter, setStatusFilter] = useState('')
+  const [editingBookId, setEditingBookId] = useState('')
+  const [bookTitle, setBookTitle] = useState('')
+  const [bookAuthorId, setBookAuthorId] = useState('')
+  const [bookGenres, setBookGenres] = useState('Business, Productivity')
+  const [bookOutcome, setBookOutcome] = useState('productivity')
+  const [bookStyleTags, setBookStyleTags] = useState('practical, actionable')
+  const [bookRiskTags, setBookRiskTags] = useState('dense')
+  const [bookEnrichmentStatus, setBookEnrichmentStatus] = useState('reviewed')
+  const [bookRecommendationEligible, setBookRecommendationEligible] =
+    useState(true)
+  const [bookDepth, setBookDepth] = useState('balanced')
+  const [bookPacing, setBookPacing] = useState('moderate')
+  const [bookDifficulty, setBookDifficulty] = useState('moderate')
+  const [bookFormat, setBookFormat] = useState('ebook')
+  const [estimatedMinutes, setEstimatedMinutes] = useState(240)
+  const booksQuery = useBooks({
+    limit: 20,
+    outcome,
+    q,
+    enrichmentStatus: statusFilter || undefined,
+    recommendationEligible: eligibleOnly ? true : undefined,
+  })
+  const authorsQuery = useAuthors({ limit: 100 })
+
+  useEffect(() => {
+    if (!bookAuthorId && authorsQuery.data?.items[0]?._id) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setBookAuthorId(authorsQuery.data.items[0]._id)
+    }
+  }, [authorsQuery.data?.items, bookAuthorId])
+
+  function handleBookCreate(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const payload = {
+      authorId: bookAuthorId,
+      depth: bookDepth,
+      difficulty: bookDifficulty,
+      estimatedMinutes,
+      enrichmentStatus: bookEnrichmentStatus,
+      formats: [bookFormat],
+      genres: toList(bookGenres),
+      outcomeTags: [bookOutcome],
+      pacing: bookPacing,
+      recommendationEligible: bookRecommendationEligible,
+      riskTags: toList(bookRiskTags),
+      styleTags: toList(bookStyleTags),
+      title: bookTitle,
+    }
+
+    if (editingBookId) {
+      updateBook.mutate({ bookId: editingBookId, body: payload })
+      return
+    }
+
+    createBook.mutate(payload)
+  }
+
   function startBookEdit(book: Book) {
     setEditingBookId(book._id)
     setBookTitle(book.title)
     setBookAuthorId(book.authorId)
     setBookGenres(book.genres.join(', '))
     setBookOutcome(book.outcomeTags[0] ?? 'productivity')
+    setBookStyleTags(book.styleTags.join(', '))
+    setBookRiskTags(book.riskTags.join(', '))
+    setBookEnrichmentStatus(book.enrichmentStatus ?? 'seeded')
+    setBookRecommendationEligible(book.recommendationEligible)
     setBookDepth(book.depth)
     setBookPacing(book.pacing)
     setBookDifficulty(book.difficulty)
@@ -1339,6 +1614,10 @@ function AdminBooks() {
     setBookTitle('')
     setBookGenres('Business, Productivity')
     setBookOutcome('productivity')
+    setBookStyleTags('practical, actionable')
+    setBookRiskTags('dense')
+    setBookEnrichmentStatus('reviewed')
+    setBookRecommendationEligible(true)
     setBookDepth('balanced')
     setBookPacing('moderate')
     setBookDifficulty('moderate')
@@ -1346,85 +1625,17 @@ function AdminBooks() {
     setEstimatedMinutes(240)
   }
 
-  const isSavingAuthor = createAuthor.isPending || updateAuthor.isPending
   const isSavingBook = createBook.isPending || updateBook.isPending
 
   return (
     <div className="space-y-6">
       <PageHeader
-        description="Catalog administration uses guarded author and book create flows plus API filters for reviewing seeded records."
+        description="Book administration handles recommendation eligibility, review status, style signals, and anti-DNF risk metadata."
         eyebrow="Admin catalog"
-        title="Review the seeded catalog from Atlas"
+        title="Review book recommendation readiness"
       />
 
-      <section className="grid gap-4 xl:grid-cols-2">
-        <form
-          className="rounded-md border border-[#d8cbb8] bg-[#fffaf0] p-5"
-          onSubmit={handleAuthorCreate}
-        >
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="text-lg font-semibold">
-              {editingAuthorId ? 'Edit author' : 'Create author'}
-            </h2>
-            {editingAuthorId ? (
-              <button
-                className="inline-flex size-9 items-center justify-center rounded-md border border-[#d8cbb8] bg-white/70 text-[#5c4f40] hover:border-[#315d48]"
-                onClick={resetAuthorForm}
-                title="Cancel author edit"
-                type="button"
-              >
-                <X size={16} />
-              </button>
-            ) : null}
-          </div>
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            <TextField label="Name" onChange={setAuthorName} value={authorName} />
-            <TextField
-              label="Known genres"
-              onChange={setAuthorGenres}
-              value={authorGenres}
-            />
-            <SelectField
-              label="Outcome strength"
-              onChange={setAuthorOutcome}
-              options={outcomeOptions}
-              value={authorOutcome}
-            />
-          </div>
-          <button
-            className="mt-5 inline-flex h-11 items-center gap-2 rounded-md bg-[#2f5d46] px-4 text-sm font-semibold text-[#fffaf0] disabled:cursor-not-allowed disabled:opacity-60"
-            disabled={isSavingAuthor || authorName.trim().length < 2}
-            type="submit"
-          >
-            <BookMarked size={17} />
-            {isSavingAuthor
-              ? 'Saving author'
-              : editingAuthorId
-                ? 'Update author'
-                : 'Create author'}
-          </button>
-          {createAuthor.isSuccess ? (
-            <StatusMessage tone="success">
-              Created {createAuthor.data.name}.
-            </StatusMessage>
-          ) : null}
-          {createAuthor.isError ? (
-            <StatusMessage tone="error">
-              Author creation requires an admin session.
-            </StatusMessage>
-          ) : null}
-          {updateAuthor.isSuccess ? (
-            <StatusMessage tone="success">
-              Updated {updateAuthor.data.name}.
-            </StatusMessage>
-          ) : null}
-          {updateAuthor.isError || deleteAuthor.isError ? (
-            <StatusMessage tone="error">
-              Author changes require an admin session and an existing record.
-            </StatusMessage>
-          ) : null}
-        </form>
-
+      <section className="grid gap-4">
         <form
           className="rounded-md border border-[#d8cbb8] bg-[#fffaf0] p-5"
           onSubmit={handleBookCreate}
@@ -1462,6 +1673,16 @@ function AdminBooks() {
               onChange={setBookGenres}
               value={bookGenres}
             />
+            <TextField
+              label="Style tags"
+              onChange={setBookStyleTags}
+              value={bookStyleTags}
+            />
+            <TextField
+              label="Risk tags"
+              onChange={setBookRiskTags}
+              value={bookRiskTags}
+            />
             <SelectField
               label="Outcome"
               onChange={setBookOutcome}
@@ -1491,6 +1712,17 @@ function AdminBooks() {
               onChange={setBookFormat}
               options={formatOptions}
               value={bookFormat}
+            />
+            <SelectField
+              label="Review status"
+              onChange={setBookEnrichmentStatus}
+              options={enrichmentStatusOptions}
+              value={bookEnrichmentStatus}
+            />
+            <CheckboxField
+              checked={bookRecommendationEligible}
+              label="Recommendation eligible"
+              onChange={setBookRecommendationEligible}
             />
             <label className="grid gap-2 text-sm font-semibold">
               Estimated minutes
@@ -1547,52 +1779,7 @@ function AdminBooks() {
       </section>
 
       <section className="rounded-md border border-[#d8cbb8] bg-[#fffaf0] p-5">
-        <h2 className="text-lg font-semibold">Author operations</h2>
-        <div className="mt-4 overflow-hidden rounded-md border border-[#e2d5c2]">
-          <div className="grid grid-cols-[1fr_1fr_0.7fr] border-b border-[#e7dbc8] bg-[#f6eddd] px-4 py-3 text-xs font-semibold uppercase text-[#74624d]">
-            <span>Author</span>
-            <span>Genres</span>
-            <span>Actions</span>
-          </div>
-          {authorsQuery.isLoading ? (
-            <TableStatus>Loading authors</TableStatus>
-          ) : null}
-          {authorsQuery.isError ? (
-            <TableStatus>Could not load author data</TableStatus>
-          ) : null}
-          {authorsQuery.data?.items.map((author) => (
-            <div
-              className="grid grid-cols-[1fr_1fr_0.7fr] items-center gap-3 border-b border-[#eee4d6] px-4 py-4 text-sm last:border-b-0"
-              key={author._id}
-            >
-              <span className="font-semibold">{author.name}</span>
-              <span>{author.knownForGenres.join(', ') || 'Unset'}</span>
-              <span className="flex items-center gap-2">
-                <button
-                  className="inline-flex size-9 items-center justify-center rounded-md border border-[#d8cbb8] bg-white/70 text-[#5c4f40] hover:border-[#315d48]"
-                  onClick={() => startAuthorEdit(author)}
-                  title="Edit author"
-                  type="button"
-                >
-                  <Pencil size={15} />
-                </button>
-                <button
-                  className="inline-flex size-9 items-center justify-center rounded-md border border-[#dfb8a6] bg-white/70 text-[#7b2f19] hover:border-[#7b2f19] disabled:cursor-not-allowed disabled:opacity-60"
-                  disabled={deleteAuthor.isPending}
-                  onClick={() => deleteAuthor.mutate(author._id)}
-                  title="Delete author"
-                  type="button"
-                >
-                  <Trash2 size={15} />
-                </button>
-              </span>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="rounded-md border border-[#d8cbb8] bg-[#fffaf0] p-5">
-        <div className="grid gap-4 md:grid-cols-[1fr_260px]">
+        <div className="grid gap-4 md:grid-cols-4">
           <TextField label="Search title" onChange={setQ} value={q} />
           <SelectField
             label="Outcome"
@@ -1600,13 +1787,24 @@ function AdminBooks() {
             options={outcomeOptions}
             value={outcome}
           />
+          <SelectField
+            label="Review status"
+            onChange={setStatusFilter}
+            options={[['', 'Any status'], ...enrichmentStatusOptions]}
+            value={statusFilter}
+          />
+          <CheckboxField
+            checked={eligibleOnly}
+            label="Eligible only"
+            onChange={setEligibleOnly}
+          />
         </div>
         <div className="mt-5 overflow-hidden rounded-md border border-[#e2d5c2]">
           <div className="grid grid-cols-[1.1fr_0.7fr_0.7fr_0.8fr_0.7fr] border-b border-[#e7dbc8] bg-[#f6eddd] px-4 py-3 text-xs font-semibold uppercase text-[#74624d]">
             <span>Book</span>
-            <span>Pacing</span>
-            <span>Difficulty</span>
-            <span>Formats</span>
+            <span>Status</span>
+            <span>Eligible</span>
+            <span>Risk tags</span>
             <span>Actions</span>
           </div>
           {booksQuery.isLoading ? <TableStatus>Loading books</TableStatus> : null}
@@ -1619,9 +1817,9 @@ function AdminBooks() {
               key={book._id}
             >
               <span className="font-semibold">{book.title}</span>
-              <span>{book.pacing}</span>
-              <span>{book.difficulty}</span>
-              <span>{book.formats.join(', ')}</span>
+              <span>{book.enrichmentStatus}</span>
+              <span>{book.recommendationEligible ? 'Yes' : 'No'}</span>
+              <span>{book.riskTags.join(', ') || 'Unset'}</span>
               <span className="flex items-center gap-2">
                 <button
                   className="inline-flex size-9 items-center justify-center rounded-md border border-[#d8cbb8] bg-white/70 text-[#5c4f40] hover:border-[#315d48]"
