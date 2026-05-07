@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { CurrentUser } from '../auth/current-user.decorator';
 import type { AuthenticatedUser } from '../auth/auth.types';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -6,6 +14,7 @@ import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
 import { CreateRecommendationSessionDto } from './dto/create-recommendation-session.dto';
 import { RecordRecommendationFeedbackDto } from './dto/record-recommendation-feedback.dto';
+import { UpdateRecommendationTuningDto } from './dto/update-recommendation-tuning.dto';
 import { RecommendationsService } from './recommendations.service';
 
 @Controller('recommendation-sessions')
@@ -37,6 +46,20 @@ export class RecommendationsController {
   @Get('admin/analytics')
   adminAnalytics() {
     return this.recommendationsService.getAdminAnalytics();
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @Get('admin/tuning')
+  adminTuning() {
+    return this.recommendationsService.getActiveTuning();
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @Patch('admin/tuning')
+  updateAdminTuning(@Body() tuningDto: UpdateRecommendationTuningDto) {
+    return this.recommendationsService.updateActiveTuning(tuningDto);
   }
 
   @UseGuards(JwtAuthGuard)

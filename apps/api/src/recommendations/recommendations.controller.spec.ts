@@ -6,7 +6,9 @@ import { RecommendationsService } from './recommendations.service';
 
 describe('RecommendationsController', () => {
   const recommendationsService = {
+    getActiveTuning: jest.fn(),
     getAdminAnalytics: jest.fn(),
+    updateActiveTuning: jest.fn(),
     create: jest.fn(),
     findAll: jest.fn(),
     findByUserId: jest.fn(),
@@ -91,4 +93,41 @@ describe('RecommendationsController', () => {
     expect(guards).toContain(RolesGuard);
     expect(Reflect.getMetadata(ROLES_KEY, handler)).toEqual(['admin']);
   });
+
+  it('reads and updates admin tuning through admin-only handlers', async () => {
+    const tuning = {
+      key: 'active',
+      outcomeFitWeight: 1,
+      personalFitWeight: 1.2,
+      contextFitWeight: 1,
+      timeFitWeight: 1,
+      behaviorFitWeight: 1,
+      dnfRiskWeight: 1.4,
+      maxRecommendations: 10,
+    };
+    recommendationsService.getActiveTuning.mockResolvedValue(tuning);
+    recommendationsService.updateActiveTuning.mockResolvedValue(tuning);
+
+    await expect(controller.adminTuning()).resolves.toBe(tuning);
+    await expect(
+      controller.updateAdminTuning({ personalFitWeight: 1.2 }),
+    ).resolves.toBe(tuning);
+    expect(recommendationsService.updateActiveTuning.mock.calls[0]).toEqual([
+      { personalFitWeight: 1.2 },
+    ]);
+  });
+
+  it.each(['adminTuning', 'updateAdminTuning'] as const)(
+    'marks %s as admin guarded',
+    (methodName) => {
+      const handler = Object.getOwnPropertyDescriptor(
+        RecommendationsController.prototype,
+        methodName,
+      )?.value as object;
+      const guards = Reflect.getMetadata(GUARDS_METADATA, handler) as unknown[];
+
+      expect(guards).toContain(RolesGuard);
+      expect(Reflect.getMetadata(ROLES_KEY, handler)).toEqual(['admin']);
+    },
+  );
 });

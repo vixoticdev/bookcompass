@@ -11,6 +11,10 @@ import {
   RecommendationSession,
   RecommendationSessionSchema,
 } from './schemas/recommendation-session.schema';
+import {
+  RecommendationTuning,
+  RecommendationTuningSchema,
+} from './schemas/recommendation-tuning.schema';
 
 @Module({
   imports: [
@@ -21,6 +25,7 @@ import {
     ReadingEventsModule,
     MongooseModule.forFeature([
       { name: RecommendationSession.name, schema: RecommendationSessionSchema },
+      { name: RecommendationTuning.name, schema: RecommendationTuningSchema },
     ]),
   ],
   controllers: [RecommendationsController],

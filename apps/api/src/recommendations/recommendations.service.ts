@@ -8,7 +8,13 @@ import { ProfilesService } from '../profiles/profiles.service';
 import { ReadingEventsService } from '../reading-events/reading-events.service';
 import { CreateRecommendationSessionDto } from './dto/create-recommendation-session.dto';
 import { RecordRecommendationFeedbackDto } from './dto/record-recommendation-feedback.dto';
+import { UpdateRecommendationTuningDto } from './dto/update-recommendation-tuning.dto';
 import { RecommendationSession } from './schemas/recommendation-session.schema';
+import {
+  DEFAULT_RECOMMENDATION_TUNING,
+  RecommendationTuning,
+  type RecommendationTuningConfig,
+} from './schemas/recommendation-tuning.schema';
 
 type ScoreableBook = {
   _id?: unknown;
@@ -55,6 +61,14 @@ type ScoredCandidate = {
   explanation: string[];
 };
 
+type ScoreBreakdownKey =
+  | 'outcomeFit'
+  | 'personalFit'
+  | 'contextFit'
+  | 'timeFit'
+  | 'behaviorFit'
+  | 'dnfRisk';
+
 export type AdminRecommendationAnalytics = {
   catalogReview: Awaited<ReturnType<BooksService['getReviewAnalytics']>>;
   candidateFeedback: {
@@ -68,6 +82,8 @@ export class RecommendationsService {
   constructor(
     @InjectModel(RecommendationSession.name)
     private readonly recommendationSessionModel: Model<RecommendationSession>,
+    @InjectModel(RecommendationTuning.name)
+    private readonly recommendationTuningModel: Model<RecommendationTuning>,
     private readonly profilesService: ProfilesService,
     private readonly readingEventsService: ReadingEventsService,
     private readonly dnfService: DnfService,
@@ -87,7 +103,8 @@ export class RecommendationsService {
       userId,
       createRecommendationSessionDto.context,
     );
-    const candidates = this.scoreCandidates(input);
+    const tuning = await this.getActiveTuning();
+    const candidates = this.scoreCandidates(input, tuning);
 
     return this.recommendationSessionModel.create({
       ...createRecommendationSessionDto,
@@ -144,6 +161,41 @@ export class RecommendationsService {
         ),
       },
     };
+  }
+
+  async getActiveTuning(): Promise<RecommendationTuningConfig> {
+    const tuning = await this.recommendationTuningModel
+      .findOne({ key: DEFAULT_RECOMMENDATION_TUNING.key })
+      .lean<RecommendationTuningConfig>()
+      .exec();
+
+    return {
+      ...DEFAULT_RECOMMENDATION_TUNING,
+      ...this.pickTuningFields(tuning),
+    };
+  }
+
+  async updateActiveTuning(updateDto: UpdateRecommendationTuningDto) {
+    const update = this.pickTuningFields(updateDto);
+
+    return this.recommendationTuningModel
+      .findOneAndUpdate(
+        { key: DEFAULT_RECOMMENDATION_TUNING.key },
+        {
+          $set: {
+            ...update,
+            key: DEFAULT_RECOMMENDATION_TUNING.key,
+          },
+        },
+        {
+          new: true,
+          runValidators: true,
+          setDefaultsOnInsert: true,
+          upsert: true,
+        },
+      )
+      .lean<RecommendationTuningConfig>()
+      .exec();
   }
 
   async recordFeedback(
@@ -226,6 +278,7 @@ export class RecommendationsService {
 
   scoreCandidates(
     input: Awaited<ReturnType<RecommendationsService['buildInput']>>,
+    tuning: RecommendationTuningConfig = DEFAULT_RECOMMENDATION_TUNING,
   ) {
     return input.catalogCandidates
       .map((book) =>
@@ -235,10 +288,11 @@ export class RecommendationsService {
           input.readingEvents as ScoreableReadingEvent[],
           input.dnfRecords as ScoreableDnfRecord[],
           input.context,
+          tuning,
         ),
       )
       .sort((a, b) => b.finalScore - a.finalScore)
-      .slice(0, 10);
+      .slice(0, tuning.maxRecommendations);
   }
 
   private scoreCandidate(
@@ -247,6 +301,7 @@ export class RecommendationsService {
     readingEvents: ScoreableReadingEvent[],
     dnfRecords: ScoreableDnfRecord[],
     context: CreateRecommendationSessionDto['context'],
+    tuning: RecommendationTuningConfig,
   ): ScoredCandidate {
     const bookId = this.getBookId(book);
     const signals: RecommendationSignal[] = [];
@@ -265,8 +320,10 @@ export class RecommendationsService {
       label: string,
       scoreImpact: number,
     ) => {
-      scoreBreakdown[key] += scoreImpact;
-      signals.push({ key: signalKey, label, scoreImpact });
+      const weightedImpact = this.applyTuningWeight(key, scoreImpact, tuning);
+
+      scoreBreakdown[key] += weightedImpact;
+      signals.push({ key: signalKey, label, scoreImpact: weightedImpact });
     };
 
     if (book.outcomeTags?.includes(context.selectedOutcome)) {
@@ -611,6 +668,49 @@ export class RecommendationsService {
   private countIntersection(left: string[] = [], right: string[] = []) {
     const rightSet = new Set(right);
     return left.filter((value) => rightSet.has(value)).length;
+  }
+
+  private applyTuningWeight(
+    key: ScoreBreakdownKey,
+    scoreImpact: number,
+    tuning: RecommendationTuningConfig,
+  ) {
+    const weights: Record<ScoreBreakdownKey, number> = {
+      outcomeFit: tuning.outcomeFitWeight,
+      personalFit: tuning.personalFitWeight,
+      contextFit: tuning.contextFitWeight,
+      timeFit: tuning.timeFitWeight,
+      behaviorFit: tuning.behaviorFitWeight,
+      dnfRisk: tuning.dnfRiskWeight,
+    };
+
+    return Math.round(scoreImpact * weights[key] * 100) / 100;
+  }
+
+  private pickTuningFields(
+    source?: Partial<RecommendationTuningConfig> | null,
+  ): Partial<RecommendationTuningConfig> {
+    if (!source) {
+      return {};
+    }
+
+    return Object.fromEntries(
+      (
+        [
+          'key',
+          'outcomeFitWeight',
+          'personalFitWeight',
+          'contextFitWeight',
+          'timeFitWeight',
+          'behaviorFitWeight',
+          'dnfRiskWeight',
+          'maxRecommendations',
+          'note',
+        ] as const
+      )
+        .filter((key) => source[key] !== undefined)
+        .map((key) => [key, source[key]]),
+    );
   }
 
   private getBookId(book: ScoreableBook) {
