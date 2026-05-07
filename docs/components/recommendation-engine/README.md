@@ -18,6 +18,8 @@ Day 13 exposes the full MVP feedback payload in the frontend. Readers can attach
 
 Day 14 adds admin analytics over the feedback loop. Admins can read aggregate catalog review readiness and recorded candidate feedback status counts through `GET /recommendation-sessions/admin/analytics`.
 
+Day 15 adds admin tuning for deterministic scoring. `GET /recommendation-sessions/admin/tuning` returns the active scoring weights, `PATCH /recommendation-sessions/admin/tuning` updates them, and new recommendation sessions apply those weights during scoring.
+
 ## Inputs
 
 - reading profile
@@ -61,6 +63,18 @@ Implemented Day 9 scoring signals:
 - behavior fit: saved/completed/disliked/abandoned history for the same book
 - anti-DNF risk: direct prior DNF is heavily penalized; pacing/difficulty pattern matches receive a smaller penalty; candidates without a matching DNF pattern receive a small positive signal
 
+Day 15 tuning controls:
+
+- outcome fit weight
+- personal fit weight
+- context fit weight
+- time fit weight
+- behavior fit weight
+- anti-DNF risk weight
+- max returned recommendations
+
+Defaults are `1x` for every score layer and `10` recommendations, so existing scoring behavior is unchanged until an admin saves a new active config.
+
 Day 12 candidate eligibility:
 
 - Recommendation input generation now requests only catalog records with `recommendationEligible: true`.
@@ -87,6 +101,12 @@ Admin analytics currently preserve:
 
 - catalog review queue totals by enrichment status and eligibility
 - recommendation candidate feedback totals by accepted, rejected, started, completed, and abandoned statuses
+
+Admin tuning currently preserves:
+
+- the active scoring weights used for new sessions
+- max returned recommendations
+- an optional admin note describing why weights changed
 
 Example:
 

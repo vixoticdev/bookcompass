@@ -164,6 +164,13 @@ Day 14 admin analytics and pagination:
 - `/admin/books` now passes `limit` and `offset` to the catalog query and exposes previous/next pagination controls for review queues.
 - Changing queue filters resets the book review queue to the first page so admins do not land on an empty later offset.
 
+Day 15 recommendation tuning:
+
+- `/admin/tuning` reads `GET /recommendation-sessions/admin/tuning` and saves changes through `PATCH /recommendation-sessions/admin/tuning`.
+- The route uses React Query for tuning reads/mutations and invalidates the tuning query after successful updates.
+- The tuning form uses slider controls for scoring layer weights, a bounded max recommendations input, and an optional note.
+- `npm run smoke:day15:web` checks the frontend contract for feedback note/progress controls, admin book pagination, and tuning route wiring.
+
 Browser metadata:
 
 - The browser tab favicon uses `public/bookcompass-icon.png`.
@@ -189,6 +196,8 @@ Browser metadata:
 - `GET /recommendation-sessions/me`
 - `POST /recommendation-sessions/:sessionId/feedback`
 - admin-only `GET /recommendation-sessions/admin/analytics`
+- admin-only `GET /recommendation-sessions/admin/tuning`
+- admin-only `PATCH /recommendation-sessions/admin/tuning`
 - admin-only `POST /authors`
 - admin-only `POST /books`
 - admin-only `PATCH /authors/:authorId`

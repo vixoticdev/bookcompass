@@ -261,9 +261,13 @@ As of 2026-05-07:
 - Recommendation history cards now capture and hydrate candidate feedback progress percentages and notes.
 - `/admin/books` now has catalog review queue presets for imported drafts, needs-review drafts, and reviewed eligible books, plus quick saved review states for draft, review, approve, and exclude.
 - Backend exposes admin-only analytics through `GET /recommendation-sessions/admin/analytics` for catalog review counts and recommendation candidate feedback outcomes.
+- Backend exposes admin-only recommendation tuning through `GET /recommendation-sessions/admin/tuning` and `PATCH /recommendation-sessions/admin/tuning`.
 - `/admin` now displays live catalog review readiness and candidate feedback outcome counts for admin users.
 - `/admin/books` review queues now paginate with previous/next controls backed by catalog `limit` and `offset`.
+- `/admin/tuning` now controls scoring layer weights and max returned recommendations for new recommendation sessions.
 - `npm run smoke:day13` provides repeatable live API smoke coverage for `/admin/authors`, book eligibility review toggles, recommendation feedback note/progress persistence, and `/profile/history` backing reads.
+- `npm run smoke:day15:web` provides frontend contract smoke coverage for recommendation feedback note/progress controls, admin book pagination, and tuning route wiring.
+- `npm run smoke:day15` provides repeatable live API smoke coverage for admin analytics, admin tuning read/update/restore, and paginated `/admin/books` backing queues.
 - Frontend reading identity is split across `/onboarding/signup`, `/onboarding/preferences`, and `/onboarding/signals`.
 - `/onboarding/signals` now displays reader-owned reading event and DNF history.
 - `/recommendations/new` now creates scored recommendation sessions from current decision context.
@@ -286,8 +290,8 @@ As of 2026-05-07:
 - Production identity provider integration is not implemented yet.
 - Recommendation engine is documented; session storage, input aggregation, first-pass scoring/ranking, score breakdowns, signals, and explanation lines exist.
 - Recommendation service can now build scoring input from profile, reading events, DNF records, and catalog candidates for a decision context.
-- Admin dashboard is documented; dedicated author management exists at `/admin/authors`, book review operations exist at `/admin/books`, and operational analytics exist on `/admin`.
-- Recommendation tuning controls are not implemented yet.
+- Admin dashboard is documented; dedicated author management exists at `/admin/authors`, book review operations exist at `/admin/books`, operational analytics exist on `/admin`, and recommendation tuning exists on `/admin/tuning`.
+- Recommendation tuning controls are implemented for deterministic scoring layer weights; deeper drop-off analytics and automated tuning guidance are not implemented yet.
 - CI/CD is not configured yet.
 
 Important historical context:
@@ -828,6 +832,39 @@ Recommended Day 15 implementation target:
 - Add a live smoke script for the admin analytics endpoint and paginated `/admin/books` review queues.
 - Start the recommendation tuning surface once analytics can expose enough feedback outcomes to guide safe tuning.
 
+### Day 15: 2026-05-07
+
+Goal: add smoke coverage for feedback/pagination and start admin recommendation tuning.
+
+Branch: `day15-2026-05-07-tuning-smoke-coverage`
+
+Completed:
+
+- Added a persisted active recommendation tuning config with conservative defaults for outcome fit, personal fit, context fit, time fit, behavior fit, anti-DNF risk, and max returned recommendations.
+- Added admin-only `GET /recommendation-sessions/admin/tuning` and `PATCH /recommendation-sessions/admin/tuning`.
+- Wired new recommendation sessions to apply active tuning weights while preserving the previous `1x` default scoring behavior.
+- Added `/admin/tuning` with scoring weight sliders, max returned recommendation count, tuning note, and feedback outcome context.
+- Added `npm run smoke:day15:web` to check frontend feedback note/progress controls, admin book pagination wiring, and tuning route/API/query contracts.
+- Added `npm run smoke:day15` to check admin analytics, tuning read/update/restore, and paginated `/books` review queue backing reads against a live API.
+- Updated backend, frontend, admin dashboard, recommendation engine, MVP LLD, project context, and release documentation.
+
+Validation:
+
+- `npm run test --workspace @bookcompass/api -- recommendations --runInBand`
+- `npm run build --workspace @bookcompass/api`
+- `npm run build --workspace @bookcompass/web`
+- `npm run check`
+- `npm run test --workspace @bookcompass/api -- --runInBand`
+- `npm run test:e2e --workspace @bookcompass/api`
+- `npm run smoke:day15:web`
+- `ADMIN_EMAIL=day15-smoke-admin@bookcompass.local ADMIN_PASSWORD=<local-smoke-password> npm run smoke:day15`
+
+Recommended Day 16 implementation target:
+
+- Add backend persistence and analytics for recommendation tuning change history before tuning becomes more aggressive.
+- Begin Phase 4 decision-engine refinement with drop-off analytics inputs and safer tuning guidance.
+- Add frontend browser verification for `/admin/tuning` once the dev web server is running.
+
 ## Month-One Timeline
 
 ### Phase 1: Foundation
@@ -962,9 +999,9 @@ Output:
 
 ## Immediate Next Steps
 
-1. Add frontend smoke or component-level coverage around recommendation feedback and admin review queue pagination.
-2. Add a live smoke script for admin analytics and paginated `/admin/books` review queues.
-3. Start the recommendation tuning surface once analytics can expose enough feedback outcomes to guide safe tuning.
+1. Add backend persistence and analytics for recommendation tuning change history before tuning becomes more aggressive.
+2. Run the Day 15 live API smoke with `ADMIN_EMAIL` and `ADMIN_PASSWORD` once the local API is running.
+3. Begin Phase 4 decision-engine refinement with drop-off analytics inputs and safer tuning guidance.
 4. Keep larger catalog draft ingestion behind `GOOGLE_BOOKS_API_KEY` and cached source responses.
 5. Keep expanding reviewed catalog metadata before enabling imported drafts for recommendations.
 
