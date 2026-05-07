@@ -16,6 +16,8 @@
     "check": "npm run lint --workspaces --if-present && npm run build --workspaces --if-present",
     "catalog:ingest": "node tools/catalog-ingestion/ingest.mjs",
     "smoke:day13": "node tools/api-smoke/day13.mjs",
+    "smoke:day15": "node tools/api-smoke/day15.mjs",
+    "smoke:day15:web": "node tools/frontend-smoke/day15.mjs",
     "infra:up": "docker compose up -d",
     "infra:down": "docker compose down"
   },

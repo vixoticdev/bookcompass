@@ -9,6 +9,7 @@ import {
   ListChecks,
   Pencil,
   Settings2,
+  SlidersHorizontal,
   Sparkles,
   Trash2,
   UserRound,
@@ -42,15 +43,18 @@ import {
   useMyReadingEvents,
   useMyReadingProfile,
   useRecordRecommendationFeedback,
+  useRecommendationTuning,
   useUpdateAuthor,
   useUpdateBook,
   useUpdateMyReadingProfile,
+  useUpdateRecommendationTuning,
 } from './lib/queries'
 import type {
   Author,
   Book,
   RecommendationFeedbackStatus,
   RecommendationSession,
+  RecommendationTuning,
 } from './lib/api'
 
 const routes = [
@@ -63,6 +67,7 @@ const routes = [
   { to: '/recommendations/new', label: 'Recommend', icon: Compass },
   { to: '/recommendations/history', label: 'History', icon: ListChecks },
   { to: '/admin', label: 'Admin', icon: Settings2 },
+  { to: '/admin/tuning', label: 'Tuning', icon: SlidersHorizontal },
   { to: '/admin/authors', label: 'Authors', icon: UserRound },
   { to: '/admin/books', label: 'Books', icon: BookMarked },
 ]
@@ -234,6 +239,7 @@ function Shell() {
                 path="/recommendations/history"
               />
               <Route element={<AdminHome />} path="/admin" />
+              <Route element={<AdminTuning />} path="/admin/tuning" />
               <Route element={<AdminAuthors />} path="/admin/authors" />
               <Route element={<AdminBooks />} path="/admin/books" />
             </Routes>
@@ -1517,6 +1523,223 @@ function AdminHome() {
           Admin analytics require an admin session.
         </StatusMessage>
       ) : null}
+    </div>
+  )
+}
+
+type TuningWeightKey =
+  | 'outcomeFitWeight'
+  | 'personalFitWeight'
+  | 'contextFitWeight'
+  | 'timeFitWeight'
+  | 'behaviorFitWeight'
+  | 'dnfRiskWeight'
+
+const tuningWeightControls: Array<{
+  key: TuningWeightKey
+  label: string
+  description: string
+}> = [
+  {
+    key: 'outcomeFitWeight',
+    label: 'Outcome fit',
+    description: 'Selected goal and profile outcome alignment',
+  },
+  {
+    key: 'personalFitWeight',
+    label: 'Personal fit',
+    description: 'Genres, depth, pacing, difficulty, and format',
+  },
+  {
+    key: 'contextFitWeight',
+    label: 'Context fit',
+    description: 'Mood, energy, focus, and requested depth',
+  },
+  {
+    key: 'timeFitWeight',
+    label: 'Time fit',
+    description: 'Current session time and weekly reading capacity',
+  },
+  {
+    key: 'behaviorFitWeight',
+    label: 'Behavior fit',
+    description: 'Saved, completed, disliked, and abandoned history',
+  },
+  {
+    key: 'dnfRiskWeight',
+    label: 'Anti-DNF risk',
+    description: 'Direct DNF records and pacing or difficulty risk patterns',
+  },
+]
+
+function AdminTuning() {
+  const analytics = useAdminAnalytics()
+  const tuningQuery = useRecommendationTuning()
+  const updateTuning = useUpdateRecommendationTuning()
+  const [draft, setDraft] = useState<RecommendationTuning>({
+    key: 'active',
+    outcomeFitWeight: 1,
+    personalFitWeight: 1,
+    contextFitWeight: 1,
+    timeFitWeight: 1,
+    behaviorFitWeight: 1,
+    dnfRiskWeight: 1,
+    maxRecommendations: 10,
+    note: '',
+  })
+
+  useEffect(() => {
+    if (tuningQuery.data) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setDraft({
+        ...tuningQuery.data,
+        note: tuningQuery.data.note ?? '',
+      })
+    }
+  }, [tuningQuery.data])
+
+  function updateWeight(key: TuningWeightKey, value: string) {
+    setDraft((current) => ({
+      ...current,
+      [key]: Number(value),
+    }))
+  }
+
+  function handleTuningSave(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    updateTuning.mutate({
+      behaviorFitWeight: draft.behaviorFitWeight,
+      contextFitWeight: draft.contextFitWeight,
+      dnfRiskWeight: draft.dnfRiskWeight,
+      maxRecommendations: draft.maxRecommendations,
+      note: draft.note?.trim() || undefined,
+      outcomeFitWeight: draft.outcomeFitWeight,
+      personalFitWeight: draft.personalFitWeight,
+      timeFitWeight: draft.timeFitWeight,
+    })
+  }
+
+  const feedbackCounts = analytics.data?.candidateFeedback.byStatus ?? {}
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        description="Tune deterministic scoring weights from admin feedback signals while keeping every recommendation explainable."
+        eyebrow="Admin tuning"
+        title="Adjust recommendation scoring"
+      />
+
+      <section className="grid gap-4 lg:grid-cols-[1fr_320px]">
+        <form
+          className="rounded-md border border-[#d8cbb8] bg-[#fffaf0] p-5"
+          onSubmit={handleTuningSave}
+        >
+          <div className="grid gap-4">
+            {tuningWeightControls.map((control) => (
+              <label
+                className="grid gap-2 rounded-md border border-[#e2d5c2] bg-white/60 p-4 text-sm font-semibold"
+                key={control.key}
+              >
+                <span className="flex items-center justify-between gap-3">
+                  <span>{control.label}</span>
+                  <span className="rounded-md bg-[#e5eee7] px-2 py-1 text-xs text-[#20372d]">
+                    {draft[control.key].toFixed(1)}x
+                  </span>
+                </span>
+                <span className="text-xs font-medium text-[#62584a]">
+                  {control.description}
+                </span>
+                <input
+                  className="accent-[#315d48]"
+                  max={3}
+                  min={0}
+                  onChange={(event) =>
+                    updateWeight(control.key, event.target.value)
+                  }
+                  step={0.1}
+                  type="range"
+                  value={draft[control.key]}
+                />
+              </label>
+            ))}
+            <label className="grid gap-2 text-sm font-semibold">
+              Max recommendations
+              <input
+                className="h-11 rounded-md border border-[#cfc0aa] bg-white px-3 text-sm outline-none focus:border-[#315d48]"
+                max={20}
+                min={1}
+                onChange={(event) =>
+                  setDraft((current) => ({
+                    ...current,
+                    maxRecommendations: Number(event.target.value),
+                  }))
+                }
+                type="number"
+                value={draft.maxRecommendations}
+              />
+            </label>
+            <TextAreaField
+              label="Tuning note"
+              onChange={(note) =>
+                setDraft((current) => ({
+                  ...current,
+                  note,
+                }))
+              }
+              value={draft.note ?? ''}
+            />
+          </div>
+          <button
+            className="mt-5 inline-flex h-11 items-center gap-2 rounded-md bg-[#2f5d46] px-4 text-sm font-semibold text-[#fffaf0] disabled:cursor-not-allowed disabled:opacity-60"
+            disabled={updateTuning.isPending || tuningQuery.isLoading}
+            type="submit"
+          >
+            <SlidersHorizontal size={17} />
+            {updateTuning.isPending ? 'Saving tuning' : 'Save tuning'}
+          </button>
+          {updateTuning.isSuccess ? (
+            <StatusMessage tone="success">
+              Recommendation tuning updated for new sessions.
+            </StatusMessage>
+          ) : null}
+          {tuningQuery.isError || updateTuning.isError ? (
+            <StatusMessage tone="error">
+              Recommendation tuning requires an admin session.
+            </StatusMessage>
+          ) : null}
+        </form>
+
+        <aside className="rounded-md border border-[#d4c3aa] bg-[#efe3cf] p-5">
+          <BarChart3 className="text-[#315d48]" size={22} />
+          <h2 className="mt-4 text-xl font-semibold">Feedback outcomes</h2>
+          <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
+            <div>
+              <dt className="text-[#74624d]">Recorded</dt>
+              <dd className="text-xl font-semibold">
+                {analytics.data?.candidateFeedback.totalRecorded ?? '-'}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-[#74624d]">Accepted</dt>
+              <dd className="text-xl font-semibold">
+                {feedbackCounts.accepted ?? 0}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-[#74624d]">Completed</dt>
+              <dd className="text-xl font-semibold">
+                {feedbackCounts.completed ?? 0}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-[#74624d]">Abandoned</dt>
+              <dd className="text-xl font-semibold">
+                {feedbackCounts.abandoned ?? 0}
+              </dd>
+            </div>
+          </dl>
+        </aside>
+      </section>
     </div>
   )
 }
