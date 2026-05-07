@@ -24,7 +24,7 @@ Required update behavior:
 5. Update or add a release note under `docs/releases/` for meaningful work.
 6. Do not remove prior day notes unless they are factually wrong; append corrections instead.
 7. Never commit secrets, connection strings, passwords, tokens, or `.env.local`.
-8. Prefer multiple semantic commits for a multi-part session instead of one large day-level commit. Group commits by coherent task or feature, such as design docs, access policy, frontend flow, catalog enrichment, tests, or runbook updates.
+8. Use multiple semantic commits for multi-part work instead of one large day-level commit. This applies even when all tasks happen inside a single development session. Group commits by coherent task or feature, such as design docs, access policy, frontend flow, catalog enrichment, tests, or runbook updates.
 9. Record the branch used for the day's work when a new daily branch is created.
 
 If a future development session changes code but does not update this file, treat that as incomplete work.
@@ -776,7 +776,7 @@ Output:
 - Add or update unit tests for every meaningful change, including edge cases and touched existing behavior.
 - Run focused validation during development, then run the full validation gate before completion.
 - Push to GitHub only after all required tests, builds, lint checks, and relevant smoke checks succeed.
-- For future multi-part work, make semantic commits as each coherent task is completed and validated. Avoid bundling an entire day of unrelated backend, frontend, tooling, and documentation changes into one commit.
+- For future multi-part work, make semantic commits as each coherent task is completed and validated, even within a single development session. Avoid bundling an entire day of unrelated backend, frontend, tooling, and documentation changes into one commit.
 - Keep the product SaaS-grade: schemas, validation, explanations, and admin operations matter.
 
 ## Key Product Concepts to Preserve

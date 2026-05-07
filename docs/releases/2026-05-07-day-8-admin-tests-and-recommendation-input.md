@@ -41,6 +41,7 @@ The bootstrap path is a backend script, not a public API route.
   - previously developed behavior must receive tests when touched or relied on by new behavior.
   - GitHub pushes happen only after all required validation succeeds.
   - project-facing documentation must avoid internal tooling names.
+- Clarified that task-scoped semantic commits apply even when multiple tasks happen inside a single development session.
 
 ## Validation
 
