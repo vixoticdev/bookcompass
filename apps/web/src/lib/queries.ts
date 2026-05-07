@@ -9,6 +9,7 @@ import {
   createDnfRecord,
   createReadingEvent,
   getCurrentUser,
+  getAdminAnalytics,
   getMyReadingProfile,
   listMyDnfRecords,
   listMyRecommendationSessions,
@@ -45,6 +46,17 @@ export function useBooks(params: Parameters<typeof listBooks>[0] = {}) {
   return useQuery({
     queryKey: ['books', params],
     queryFn: () => listBooks(params),
+  });
+}
+
+export function useAdminAnalytics() {
+  return useQuery({
+    queryKey: ['admin', 'analytics'],
+    queryFn: getAdminAnalytics,
+    enabled:
+      typeof window !== 'undefined' &&
+      Boolean(window.localStorage.getItem('bookcompass.accessToken')),
+    retry: false,
   });
 }
 
@@ -235,6 +247,7 @@ export function useCreateBook() {
     mutationFn: (input: CreateBookInput) => createBook(input),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['books'] });
+      void queryClient.invalidateQueries({ queryKey: ['admin', 'analytics'] });
     },
   });
 }
@@ -247,6 +260,7 @@ export function useUpdateBook() {
       updateBook(input),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['books'] });
+      void queryClient.invalidateQueries({ queryKey: ['admin', 'analytics'] });
       void queryClient.invalidateQueries({
         queryKey: ['recommendation-sessions', 'me'],
       });
@@ -261,6 +275,7 @@ export function useDeleteBook() {
     mutationFn: (bookId: string) => deleteBook(bookId),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['books'] });
+      void queryClient.invalidateQueries({ queryKey: ['admin', 'analytics'] });
       void queryClient.invalidateQueries({
         queryKey: ['recommendation-sessions', 'me'],
       });

@@ -23,6 +23,7 @@ import {
 } from 'react'
 import { NavLink, Navigate, Route, Routes } from 'react-router-dom'
 import {
+  useAdminAnalytics,
   useAuthors,
   useBooks,
   useCreateAuthor,
@@ -1431,6 +1432,10 @@ function RecommendationSessionCard({
 }
 
 function AdminHome() {
+  const analytics = useAdminAnalytics()
+  const reviewCounts = analytics.data?.catalogReview.byEnrichmentStatus ?? {}
+  const feedbackCounts = analytics.data?.candidateFeedback.byStatus ?? {}
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -1440,7 +1445,7 @@ function AdminHome() {
       />
 
       <section className="grid gap-4 lg:grid-cols-3">
-        {adminModules.map(([title, body]) => (
+        {adminModules.map(([title, body], index) => (
           <article
             className="rounded-md border border-[#d8cbb8] bg-[#fffaf0] p-5"
             key={title}
@@ -1448,9 +1453,70 @@ function AdminHome() {
             <BarChart3 className="text-[#315d48]" size={20} />
             <h2 className="mt-4 text-lg font-semibold">{title}</h2>
             <p className="mt-2 text-sm leading-6 text-[#62584a]">{body}</p>
+            {index === 0 ? (
+              <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <dt className="text-[#74624d]">Ready</dt>
+                  <dd className="text-xl font-semibold">
+                    {analytics.data?.catalogReview.eligible ?? '-'}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-[#74624d]">Drafts</dt>
+                  <dd className="text-xl font-semibold">
+                    {analytics.data?.catalogReview.ineligible ?? '-'}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-[#74624d]">Imported</dt>
+                  <dd className="text-xl font-semibold">
+                    {reviewCounts.imported ?? 0}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-[#74624d]">Needs review</dt>
+                  <dd className="text-xl font-semibold">
+                    {reviewCounts['needs-review'] ?? 0}
+                  </dd>
+                </div>
+              </dl>
+            ) : null}
+            {index === 2 ? (
+              <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <dt className="text-[#74624d]">Recorded</dt>
+                  <dd className="text-xl font-semibold">
+                    {analytics.data?.candidateFeedback.totalRecorded ?? '-'}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-[#74624d]">Completed</dt>
+                  <dd className="text-xl font-semibold">
+                    {feedbackCounts.completed ?? 0}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-[#74624d]">Accepted</dt>
+                  <dd className="text-xl font-semibold">
+                    {feedbackCounts.accepted ?? 0}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-[#74624d]">Abandoned</dt>
+                  <dd className="text-xl font-semibold">
+                    {feedbackCounts.abandoned ?? 0}
+                  </dd>
+                </div>
+              </dl>
+            ) : null}
           </article>
         ))}
       </section>
+      {analytics.isError ? (
+        <StatusMessage tone="error">
+          Admin analytics require an admin session.
+        </StatusMessage>
+      ) : null}
     </div>
   )
 }
@@ -1642,8 +1708,11 @@ function AdminBooks() {
   const [bookDifficulty, setBookDifficulty] = useState('moderate')
   const [bookFormat, setBookFormat] = useState('ebook')
   const [estimatedMinutes, setEstimatedMinutes] = useState(240)
+  const [bookOffset, setBookOffset] = useState(0)
+  const bookPageSize = 20
   const booksQuery = useBooks({
-    limit: 20,
+    limit: bookPageSize,
+    offset: bookOffset,
     outcome: outcome || undefined,
     q,
     enrichmentStatus: statusFilter || undefined,
@@ -1663,6 +1732,14 @@ function AdminBooks() {
       setBookAuthorId(authorsQuery.data.items[0]._id)
     }
   }, [authorsQuery.data?.items, bookAuthorId])
+
+  function updateBookFilter(
+    setter: (value: string) => void,
+    value: string,
+  ) {
+    setter(value)
+    setBookOffset(0)
+  }
 
   function handleBookCreate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -1724,6 +1801,7 @@ function AdminBooks() {
   }
 
   function applyReviewQueue(preset: 'imported' | 'needs-review' | 'reviewed') {
+    setBookOffset(0)
     setQ('')
     setOutcome('')
     setStyleTagFilter('')
@@ -1755,6 +1833,19 @@ function AdminBooks() {
   }
 
   const isSavingBook = createBook.isPending || updateBook.isPending
+  const firstVisibleBook = booksQuery.data?.total
+    ? booksQuery.data.offset + 1
+    : 0
+  const lastVisibleBook = booksQuery.data
+    ? Math.min(
+        booksQuery.data.offset + booksQuery.data.items.length,
+        booksQuery.data.total,
+      )
+    : 0
+  const hasPreviousBookPage = bookOffset > 0
+  const hasNextBookPage = booksQuery.data
+    ? booksQuery.data.offset + booksQuery.data.limit < booksQuery.data.total
+    : false
 
   return (
     <div className="space-y-6">
@@ -1932,16 +2023,20 @@ function AdminBooks() {
           </button>
         </div>
         <div className="mt-4 grid gap-4 md:grid-cols-4">
-          <TextField label="Search title" onChange={setQ} value={q} />
+          <TextField
+            label="Search title"
+            onChange={(value) => updateBookFilter(setQ, value)}
+            value={q}
+          />
           <SelectField
             label="Outcome"
-            onChange={setOutcome}
+            onChange={(value) => updateBookFilter(setOutcome, value)}
             options={[['', 'Any outcome'], ...outcomeOptions]}
             value={outcome}
           />
           <SelectField
             label="Review status"
-            onChange={setStatusFilter}
+            onChange={(value) => updateBookFilter(setStatusFilter, value)}
             options={[['', 'Any status'], ...enrichmentStatusOptions]}
             value={statusFilter}
           />
@@ -1949,6 +2044,7 @@ function AdminBooks() {
             checked={eligibleOnly}
             label="Eligible only"
             onChange={(checked) => {
+              setBookOffset(0)
               setEligibleOnly(checked)
               if (checked) {
                 setIneligibleOnly(false)
@@ -1959,6 +2055,7 @@ function AdminBooks() {
             checked={ineligibleOnly}
             label="Drafts only"
             onChange={(checked) => {
+              setBookOffset(0)
               setIneligibleOnly(checked)
               if (checked) {
                 setEligibleOnly(false)
@@ -1967,12 +2064,12 @@ function AdminBooks() {
           />
           <TextField
             label="Style tag"
-            onChange={setStyleTagFilter}
+            onChange={(value) => updateBookFilter(setStyleTagFilter, value)}
             value={styleTagFilter}
           />
           <TextField
             label="Risk tag"
-            onChange={setRiskTagFilter}
+            onChange={(value) => updateBookFilter(setRiskTagFilter, value)}
             value={riskTagFilter}
           />
         </div>
@@ -2074,11 +2171,33 @@ function AdminBooks() {
             <TableStatus>No matching books</TableStatus>
           ) : null}
         </div>
-        <p className="mt-3 flex items-center gap-2 text-sm text-[#62584a]">
-          <BookMarked className="text-[#315d48]" size={17} />
-          Showing {booksQuery.data?.items.length ?? 0} of{' '}
-          {booksQuery.data?.total ?? 0} catalog records.
-        </p>
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm text-[#62584a]">
+          <p className="flex items-center gap-2">
+            <BookMarked className="text-[#315d48]" size={17} />
+            Showing {firstVisibleBook}-{lastVisibleBook} of{' '}
+            {booksQuery.data?.total ?? 0} catalog records.
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              className="inline-flex h-9 items-center rounded-md border border-[#d8cbb8] bg-white/70 px-3 text-xs font-semibold text-[#5c4f40] hover:border-[#315d48] disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={!hasPreviousBookPage || booksQuery.isFetching}
+              onClick={() =>
+                setBookOffset((current) => Math.max(0, current - bookPageSize))
+              }
+              type="button"
+            >
+              Previous
+            </button>
+            <button
+              className="inline-flex h-9 items-center rounded-md border border-[#d8cbb8] bg-white/70 px-3 text-xs font-semibold text-[#5c4f40] hover:border-[#315d48] disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={!hasNextBookPage || booksQuery.isFetching}
+              onClick={() => setBookOffset((current) => current + bookPageSize)}
+              type="button"
+            >
+              Next
+            </button>
+          </div>
+        </div>
       </section>
     </div>
   )
