@@ -27,7 +27,7 @@ import {
   type CreateReadingProfileInput,
   type DnfRecordInput,
   type RecommendationContext,
-  type RecommendationFeedbackStatus,
+  type RecordRecommendationFeedbackInput,
   type ReadingEventInput,
   type SignupInput,
   type UpdateAuthorInput,
@@ -181,11 +181,8 @@ export function useRecordRecommendationFeedback() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (input: {
-      sessionId: string;
-      bookId: string;
-      status: RecommendationFeedbackStatus;
-    }) => recordRecommendationFeedback(input),
+    mutationFn: (input: RecordRecommendationFeedbackInput) =>
+      recordRecommendationFeedback(input),
     onSuccess: () => {
       void queryClient.invalidateQueries({
         queryKey: ['recommendation-sessions', 'me'],

@@ -204,6 +204,14 @@ export type RecommendationFeedback = {
   recordedAt: string;
 };
 
+export type RecordRecommendationFeedbackInput = {
+  sessionId: string;
+  bookId: string;
+  status: RecommendationFeedbackStatus;
+  progressPercent?: number;
+  note?: string;
+};
+
 export class ApiError extends Error {
   readonly status: number;
 
@@ -450,13 +458,9 @@ export function listMyRecommendationSessions() {
     });
 }
 
-export function recordRecommendationFeedback(input: {
-  sessionId: string;
-  bookId: string;
-  status: RecommendationFeedbackStatus;
-  progressPercent?: number;
-  note?: string;
-}) {
+export function recordRecommendationFeedback(
+  input: RecordRecommendationFeedbackInput,
+) {
   const { sessionId, ...body } = input;
 
   return axiosInstance
