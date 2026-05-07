@@ -64,3 +64,11 @@ The admin dashboard makes BookCompass operationally tunable. It should help the 
 - Book updates post to admin-only `PATCH /books/:bookId`; book deletes call `DELETE /books/:bookId`.
 - API services return `404` for missing catalog mutation targets.
 - Dedicated `/admin/authors`, catalog review queues, analytics, and tuning controls remain planned.
+
+## Day 12 Admin Route Split And Review Metadata
+
+- `/admin/authors` now owns author create, edit, delete, and list operations.
+- `/admin/books` now focuses on book create, edit, delete, and catalog review metadata.
+- Book controls include `enrichmentStatus`, `recommendationEligible`, `styleTags`, and `riskTags`.
+- Book list filters include review status and eligible-only filtering.
+- Catalog review queues, analytics, and tuning controls remain planned.

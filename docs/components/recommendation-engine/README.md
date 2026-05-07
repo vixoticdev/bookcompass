@@ -57,6 +57,11 @@ Implemented Day 9 scoring signals:
 - behavior fit: saved/completed/disliked/abandoned history for the same book
 - anti-DNF risk: direct prior DNF is heavily penalized; pacing/difficulty pattern matches receive a smaller penalty; candidates without a matching DNF pattern receive a small positive signal
 
+Day 12 candidate eligibility:
+
+- Recommendation input generation now requests only catalog records with `recommendationEligible: true`.
+- Admin book metadata now includes `enrichmentStatus`, `styleTags`, and `riskTags`, giving the review workflow explicit fields for future anti-DNF tuning.
+
 ## Explainability Requirement
 
 Every recommendation must include:
